@@ -1,0 +1,33 @@
+{
+  "name": "contracts-template",
+  "version": "1.0.0",
+  "description": "Template for Solidity contracts",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx buidler test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mudgen/contracts-template.git"
+  },
+  "author": "Nick Mudge",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mudgen/contracts-template/issues"
+  },
+  "homepage": "https://github.com/mudgen/contracts-template#readme",
+  "devDependencies": {
+    "@nomiclabs/buidler": "^1.4.7",
+    "@nomiclabs/buidler-ethers": "^2.0.2",
+    "@nomiclabs/buidler-waffle": "^2.1.0",
+    "chai": "^4.2.0",
+    "diamond-util": "^1.0.14",
+    "ethereum-waffle": "^3.1.1",
+    "ethers": "^5.0.17",
+    "husky": "^4.3.0",
+    "prettier": "^2.1.2",
+    "prettier-plugin-solidity": "^1.0.0-alpha.59",
+    "standard": "^14.3.4",
+    "typescript": "^4.0.3"
+  }
+}
