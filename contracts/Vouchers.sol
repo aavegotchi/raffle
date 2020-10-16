@@ -46,15 +46,15 @@ contract VouchersFacet is IERC1155 {
         // ERC1155Metadata_URI
         s.supportedInterfaces[IERC1155Metadata_URI.uri.selector] = true;
 
- // create wearable tickets:
-         for (uint256 i; i < 5; i++) {
+        // create wearable tickets:
+        for (uint256 i; i < 5; i++) {
             uint256 id = i;
             s.vouchers[id].accountBalances[msg.sender] += 10;
             s.vouchers[id].totalSupply += 10;
             emit TransferSingle(msg.sender, address(0), address(0), i, 0);
         }
 
-       /* emit TransferSingle(msg.sender, address(0), address(0), 1, 0);
+        /* emit TransferSingle(msg.sender, address(0), address(0), 1, 0);
         emit TransferSingle(msg.sender, address(0), address(0), 2, 0);
         emit TransferSingle(msg.sender, address(0), address(0), 3, 0);
         emit TransferSingle(msg.sender, address(0), address(0), 4, 0);

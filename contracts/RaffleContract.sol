@@ -51,6 +51,7 @@ struct RaffleItem {
 
 contract RaffleContract {
     AppStorage internal s;
+    bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event RaffleStarted(uint256 indexed raffleId, uint256 raffleEnd, RaffleItem[] raffleItems);
     event RaffleStaker(uint256 indexed raffleId, address staker, StakeItemInput[] stakeItems);
@@ -74,7 +75,9 @@ contract RaffleContract {
 
     function startRaffle(uint256 _raffleEnd, RaffleItem[] calldata _raffleItems) external {
         require(msg.sender == s.contractOwner, "Raffle: Must be contract owner");
-        emit RaffleStarted(s.raffles.length, _raffleEnd, _raffleItems);
+        require(_raffleEnd > block.timestamp + 3600, "Raffle: _raffleEnd must be greater than 1 hour");
+        uint256 raffleId = s.raffles.length;
+        emit RaffleStarted(raffleId, _raffleEnd, _raffleItems);
         Raffle storage raffle = s.raffles.push();
         raffle.raffleEnd = uint256(_raffleEnd);
         for (uint256 i; i < _raffleItems.length; i++) {
@@ -94,9 +97,42 @@ contract RaffleContract {
                 address(this),
                 _raffleItems[i].prizeId,
                 _raffleItems[i].prizeValue,
-                ""
+                abi.encode(raffleId)
             );
         }
+    }
+
+    /**
+        @notice Handle the receipt of a single ERC1155 token type.
+        @dev An ERC1155-compliant smart contract MUST call this function on the token recipient contract, at the end of a `safeTransferFrom` after the balance has been updated.        
+        This function MUST return `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))` (i.e. 0xf23a6e61) if it accepts the transfer.
+        This function MUST revert if it rejects the transfer.
+        Return of any other value than the prescribed keccak256 generated value MUST result in the transaction being reverted by the caller.
+        @param _operator  The address which initiated the transfer (i.e. msg.sender)
+        @param _from      The address which previously owned the token
+        @param _id        The ID of the token being transferred
+        @param _value     The amount of tokens being transferred
+        @param _data      Additional data with no specified format
+        @return           `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`
+    */
+    function onERC1155Received(
+        address _operator,
+        address _from,
+        uint256 _id,
+        uint256 _value,
+        bytes calldata _data
+    ) external view returns (bytes4) {
+        _operator; // silence not used warning
+        _from; // silence not used warning
+        _id; // silence not used warning
+        _value; // silence not used warning
+        require(_data.length == 32, "Raffle: Incorrect data sent on transfer");
+        uint256 raffleId = abi.decode(_data, (uint256));
+        require(raffleId < s.raffles.length, "Raffle: Raffle does not exist");
+        Raffle storage raffle = s.raffles[raffleId];
+        uint256 raffleEnd = raffle.raffleEnd;
+        require(raffleEnd > block.timestamp, "Raffle: Can't accept transfer for expired raffle");
+        return ERC1155_ACCEPTED;
     }
 
     function openRaffles() external view returns (uint256[] memory openRaffles_) {
@@ -140,6 +176,8 @@ contract RaffleContract {
             }
         }
     }
+
+    // function raffleStats()
 
     struct StakeItemInput {
         address stakeAddress;
