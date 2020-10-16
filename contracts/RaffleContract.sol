@@ -203,7 +203,13 @@ contract RaffleContract {
             uint256 stakeTotal = raffle.stakeItems[stakeItemIndex].stakeTotal;
             raffle.userStakes[msg.sender].push(UserStake(uint24(stakeItemIndex), uint112(stakeTotal), uint112(stakeTotal + stakeValue)));
             raffle.stakeItems[stakeItemIndex].stakeTotal = stakeTotal + stakeValue;
-            IERC1155(_stakeItems[i].stakeAddress).safeTransferFrom(msg.sender, address(this), _stakeItems[i].stakeId, _stakeItems[i].stakeValue, "");
+            IERC1155(_stakeItems[i].stakeAddress).safeTransferFrom(
+                msg.sender,
+                address(this),
+                _stakeItems[i].stakeId,
+                _stakeItems[i].stakeValue,
+                abi.encode(_raffleId)
+            );
         }
     }
 
