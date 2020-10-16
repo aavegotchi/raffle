@@ -12,7 +12,7 @@ struct AppStorage {
 }
 
 struct Raffle {
-    // stakeAddress => (stakeId => index)
+    // stakeAddress => (stakeId => index + 1)
     mapping(address => mapping(uint256 => uint256)) stakeItemIndexes;
     StakeItem[] stakeItems;
     mapping(uint256 => RafflePrize[]) rafflePrizes;
@@ -199,7 +199,7 @@ contract RaffleContract {
             stakerStats_[i].stakeAddress = raffle.stakeItems[i].stakeAddress;
             stakerStats_[i].stakeId = raffle.stakeItems[i].stakeId;
             stakerStats_[i].stakeTotal = raffle.stakeItems[i].stakeTotal;
-            uint256 stakeItemIndex = raffle.stakeItemIndexes[stakerStats_[i].stakeAddress][stakerStats_[i].stakeId];
+            uint256 stakeItemIndex = raffle.stakeItemIndexes[stakerStats_[i].stakeAddress][stakerStats_[i].stakeId] - 1;
             for (uint256 j; j < raffle.stakers.length; j++) {
                 address staker = raffle.stakers[j];
                 for (uint256 k; k < raffle.userStakes[staker].length; k++) {
