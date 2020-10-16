@@ -175,19 +175,19 @@ contract RaffleContract {
         require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
         uint256 randomNumber = raffle.randomNumber;
         require(randomNumber > 0, "Raffle: Random number not generated yet");
-        uint256 numRaffleItems;
-        for (uint256 i; i < raffle.stakeItems.length; i++) {
-            RafflePrize[] storage rafflePrizes = raffle.rafflePrizes[i];
-            numRaffleItems += rafflePrizes.length;
+        {
+            uint256 numRaffleItems;
+            for (uint256 i; i < raffle.stakeItems.length; i++) {
+                RafflePrize[] storage rafflePrizes = raffle.rafflePrizes[i];
+                numRaffleItems += rafflePrizes.length;
+            }
+            winners_ = new Winner[](_stakers.length * numRaffleItems);
         }
-        winners_ = new Winner[](_stakers.length * numRaffleItems);
         uint256 winnersNum;
         for (uint256 h; h < _stakers.length; h++) {
             address staker = _stakers[h];
             UserStake[] storage userStakes = raffle.userStakes[staker];
             for (uint256 i; i < userStakes.length; i++) {
-                uint256 rangeStart = userStakes[i].rangeStart;
-                uint256 rangeEnd = userStakes[i].rangeEnd;
                 uint256 stakeItemIndex = userStakes[i].stakeItemIndex;
                 uint256 stakeTotal = raffle.stakeItems[stakeItemIndex].stakeTotal;
                 RafflePrize[] storage rafflePrizes = raffle.rafflePrizes[stakeItemIndex];
@@ -197,7 +197,7 @@ contract RaffleContract {
                     uint256 prizeId = rafflePrizes[j].prizeId;
                     for (uint256 k; k < rafflePrizes[j].prizeValue; k++) {
                         uint256 winningNumber = uint256(keccak256(abi.encodePacked(randomNumber, prizeAddress, prizeId, k))) % stakeTotal;
-                        if (winningNumber >= rangeStart && winningNumber < rangeEnd) {
+                        if (winningNumber >= userStakes[i].rangeStart && winningNumber < userStakes[i].rangeEnd) {
                             winnings++;
                         }
                     }
