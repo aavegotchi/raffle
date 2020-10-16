@@ -1,0 +1,16 @@
+event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    constructor(address _contractOwner) {
+        s.contractOwner = _contractOwner;
+    }
+
+    function owner() external view returns (address) {
+        return s.contractOwner;
+    }
+
+    function transferOwnership(address _newContractOwner) external {
+        address previousOwner = s.contractOwner;
+        require(msg.sender == previousOwner, "Raffle: Must be contract owner");
+        s.contractOwner = _newContractOwner;
+        emit OwnershipTransferred(previousOwner, _newContractOwner);
+    }
