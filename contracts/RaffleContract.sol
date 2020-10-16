@@ -177,8 +177,16 @@ contract RaffleContract {
         }
     }
 
-    // function raffleStats()
-
+    /*
+    function stakerStats(uint256 _raffleId) external view returns (uint256 numStakers_) {
+        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
+        Raffle storage raffle = s.raffles[_raffleId];
+        for (uint256 i; i < raffle.stakers.length; i++) {
+            for (uint256 j; j < raffle.userStakes[raffle.stakers[i]]; j++) {}
+        }
+        numStakers_ = raffle.stakers.length;
+    }
+*/
     struct StakeItemInput {
         address stakeAddress;
         uint256 stakeId;
