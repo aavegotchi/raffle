@@ -38,9 +38,23 @@ describe('Raffle', function () {
     const items = [
       [
         voucherAddress, // address stakeAddress;
-        '0', // uint256 stakeId;
+        '0', // uint256 stakeId; //The rarity type of the ticket
         voucherAddress, // address prizeAddress;
-        '0', // uint256 prizeId;
+        '0', // uint256 prizeId; //The specific item of the item 
+        '5' // uint256 prizeValue;
+      ],
+      [
+        voucherAddress, // address stakeAddress;
+        '1', // uint256 stakeId;
+        voucherAddress, // address prizeAddress;
+        '1', // uint256 prizeId;
+        '5' // uint256 prizeValue;
+      ],
+      [
+        voucherAddress, // address stakeAddress;
+        '2', // uint256 stakeId;
+        voucherAddress, // address prizeAddress;
+        '2', // uint256 prizeId;
         '5' // uint256 prizeValue;
       ]
     ]
@@ -48,11 +62,53 @@ describe('Raffle', function () {
     // Approve vouchers to transfer
     await vouchers.setApprovalForAll(raffle.address, true)
     // I changed the end time to a uint256 because Date.now() uses the millisecond version of timestamps. Can change back to uint32 if you'd prefer.
-    const raffleEndTime = Date.now() + 86400
+    const raffleEndTime = Number((Date.now() / 1000).toFixed()) + 86400
     await raffle.startRaffle(raffleEndTime, items)
     const info = await raffle.raffleInfo('0')
     console.log('info:', info)
     const raffleEnd = Number(info.raffleEnd_)
-    expect(raffleEnd).to.greaterThan(Date.now())
+    expect(raffleEnd).to.greaterThan(Number((Date.now() / 1000).toFixed()))
+    expect
+    expect(info.raffleItems_.length).to.equal(3)
+  })
+
+  it("Should stake tickets to raffle", async function () {
+
+
+    const stakeItems = [
+      [
+        voucherAddress,  //address stakeAddress;
+        0,  //uint256 stakeId;
+        5 //uint256 stakeTotal;
+      ],
+      [
+        voucherAddress,  //address stakeAddress;
+        1,  //uint256 stakeId;
+        5 //uint256 stakeTotal;
+      ],
+
+    ]
+    await raffle.stake("0", stakeItems)
+    const info = await raffle.raffleInfo('0')
+  })
+
+  it("Should draw random number for each prize", async function () {
+    ethers.provider.send("evm_increaseTime", [86401])   // add 60 seconds
+    await raffle.drawRandomNumber("0")
+    const winners = await raffle['winners(uint256)']("0")
+    const winner = winners[0]
+    expect(winner.staker).to.equal(account)
+    expect(winners.length).to.equal(2)
+    winners.forEach((obj) => {
+      expect(obj.claimed).to.equal(false)
+    });
+  })
+
+  it("Should claim prizes", async function () {
+    await raffle.claimPrize("0")
+    const winners = await raffle['winners(uint256)']("0")
+    winners.forEach((obj) => {
+      expect(obj.claimed).to.equal(true)
+    });
   })
 })
