@@ -20,7 +20,7 @@ struct Raffle {
     mapping(address => bool) prizeClaimed;
     address[] stakers;
     uint256 randomNumber;
-    uint32 raffleEnd;
+    uint256 raffleEnd;
 }
 
 struct UserStake {
@@ -76,7 +76,7 @@ contract RaffleContract {
         require(msg.sender == s.contractOwner, "Raffle: Must be contract owner");
         emit RaffleStarted(s.raffles.length, _raffleEnd, _raffleItems);
         Raffle storage raffle = s.raffles.push();
-        raffle.raffleEnd = uint32(_raffleEnd);
+        raffle.raffleEnd = uint256(_raffleEnd);
         for (uint256 i; i < _raffleItems.length; i++) {
             address stakeAddress = _raffleItems[i].stakeAddress;
             uint256 stakeId = _raffleItems[i].stakeId;
