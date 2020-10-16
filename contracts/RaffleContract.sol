@@ -184,16 +184,34 @@ contract RaffleContract {
         }
     }
 
-    /*
-    function stakerStats(uint256 _raffleId) external view returns (uint256 numStakers_) {
+    struct StakerStats {
+        address stakeAddress;
+        uint256 stakeId;
+        uint256 numberOfStakers;
+        uint256 stakeTotal;
+    }
+
+    function stakerStats(uint256 _raffleId) external view returns (StakerStats[] memory stakerStats_) {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
-        for (uint256 i; i < raffle.stakers.length; i++) {
-            for (uint256 j; j < raffle.userStakes[raffle.stakers[i]]; j++) {}
+        stakerStats_ = new StakerStats[](raffle.stakeItems.length);
+        for (uint256 i; i < raffle.stakeItems.length; i++) {
+            stakerStats_[i].stakeAddress = raffle.stakeItems[i].stakeAddress;
+            stakerStats_[i].stakeId = raffle.stakeItems[i].stakeId;
+            stakerStats_[i].stakeTotal = raffle.stakeItems[i].stakeTotal;
+            uint256 stakeItemIndex = raffle.stakeItemIndexes[stakerStats_[i].stakeAddress][stakerStats_[i].stakeId];
+            for (uint256 j; j < raffle.stakers.length; j++) {
+                address staker = raffle.stakers[j];
+                for (uint256 k; k < raffle.userStakes[staker].length; k++) {
+                    if (stakeItemIndex == raffle.userStakes[staker][k].stakeItemIndex) {
+                        stakerStats_[i].numberOfStakers++;
+                        break;
+                    }
+                }
+            }
         }
-        numStakers_ = raffle.stakers.length;
     }
-*/
+
     struct StakeItemInput {
         address stakeAddress;
         uint256 stakeId;
