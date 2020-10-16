@@ -81,6 +81,8 @@ describe('Raffle', function () {
       [voucherAddress, 1, 5]
     ]
     await raffle.stake('0', stakeItems)
+    const stakerStats = await raffle.stakerStats('0')
+    console.log('staker stats:', stakerStats)
   })
 
   it('🙆‍♂️  Should not draw a number before raffle ends', async function () {
