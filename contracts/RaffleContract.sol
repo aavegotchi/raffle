@@ -135,12 +135,19 @@ contract RaffleContract {
         return ERC1155_ACCEPTED;
     }
 
-    function openRaffles() external view returns (uint256[] memory openRaffles_) {
-        openRaffles_ = new uint256[](s.raffles.length);
+    struct OpenRaffle {
+        uint256 raffleId;
+        uint256 raffleEnd;
+    }
+
+    function openRaffles() external view returns (OpenRaffle[] memory openRaffles_) {
+        openRaffles_ = new OpenRaffle[](s.raffles.length);
         uint256 numOpen;
         for (uint256 i; i < s.raffles.length; i++) {
-            if (s.raffles[i].raffleEnd > block.timestamp) {
-                openRaffles_[numOpen] = i;
+            uint256 raffleEnd = s.raffles[i].raffleEnd;
+            if (raffleEnd > block.timestamp) {
+                openRaffles_[numOpen].raffleId = i;
+                openRaffles_[numOpen].raffleEnd = raffleEnd;
                 numOpen++;
             }
         }
