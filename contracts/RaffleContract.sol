@@ -18,6 +18,7 @@ struct Raffle {
     mapping(uint256 => RafflePrize[]) rafflePrizes;
     mapping(address => UserStake[]) userStakes;
     mapping(address => bool) prizeClaimed;
+    address[] stakers;
     uint256 randomNumber;
     uint32 raffleEnd;
 }
@@ -98,6 +99,20 @@ contract RaffleContract {
         }
     }
 
+    function openRaffles() external view returns (uint256[] memory openRaffles_) {
+        openRaffles_ = new uint256[](s.raffles.length);
+        uint256 numOpen;
+        for (uint256 i; i < s.raffles.length; i++) {
+            if (s.raffles[i].raffleEnd > block.timestamp) {
+                openRaffles_[numOpen] = i;
+                numOpen++;
+            }
+        }
+        assembly {
+            mstore(openRaffles_, numOpen)
+        }
+    }
+
     function raffleSupply() external view returns (uint256 raffleSupply_) {
         raffleSupply_ = s.raffles.length;
     }
@@ -137,6 +152,9 @@ contract RaffleContract {
         Raffle storage raffle = s.raffles[_raffleId];
         require(raffle.raffleEnd > block.timestamp, "Raffle: Raffle time has expired");
         emit RaffleStaker(_raffleId, msg.sender, _stakeItems);
+        if (raffle.userStakes[msg.sender].length == 0) {
+            raffle.stakers.push(msg.sender);
+        }
         for (uint256 i; i < _stakeItems.length; i++) {
             address stakeAddress = _stakeItems[i].stakeAddress;
             uint256 stakeId = _stakeItems[i].stakeId;
@@ -169,7 +187,13 @@ contract RaffleContract {
         uint256 prizeValue;
     }
 
-    function winners(uint256 _raffleId, address[] calldata _stakers) external view returns (Winner[] memory winners_) {
+    function winners(uint256 _raffleId) external view returns (Winner[] memory winners_) {
+        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
+        Raffle storage raffle = s.raffles[_raffleId];
+        winners_ = winners(_raffleId, raffle.stakers);
+    }
+
+    function winners(uint256 _raffleId, address[] memory _stakers) public view returns (Winner[] memory winners_) {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
