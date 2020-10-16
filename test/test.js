@@ -25,7 +25,7 @@ describe('Raffle', function () {
     voucherAddress = vouchers.address
   })
 
-  it('Should have 10 of each ticket', async function () {
+  it('🙆‍♂️  Should have 10 of each ticket', async function () {
     const balances = await vouchers.balanceOfAll(account)
     const totalSupply = await vouchers.totalSupply(0)
     expect(balances[0]).to.equal(10)
@@ -34,7 +34,7 @@ describe('Raffle', function () {
     expect(totalSupply).to.equal(10)
   })
 
-  it('Should start raffle', async function () {
+  it('🙆‍♂️  Should start raffle', async function () {
 
     // address stakeAddress;
     // uint256 stakeId; //The rarity type of the ticket
@@ -57,9 +57,13 @@ describe('Raffle', function () {
     expect(raffleEnd).to.greaterThan(Number((Date.now() / 1000).toFixed()))
     expect
     expect(info.raffleItems_.length).to.equal(3)
+
+    //Test openRaffles function
+    const openRaffles = await raffle.openRaffles()
+    expect(openRaffles.length).to.equal(1)
   })
 
-  it("Shouldn't be able to stake more tickets than they own", async function () {
+  it("🙅‍♀️  Cannot stake more tickets than they own", async function () {
     const stakeItems = [
       [voucherAddress, 0, 10],
       [voucherAddress, 1, 5],
@@ -67,7 +71,12 @@ describe('Raffle', function () {
     await truffleAssert.reverts(raffle.stake("0", stakeItems), "Vouchers: _value greater than balance")
   })
 
-  it("Should stake tickets to raffle", async function () {
+  it("🙅‍♀️  Cannot stake to nonexistent raffle", async function () {
+    const stakeItems = [[voucherAddress, 1, 5]]
+    await truffleAssert.reverts(raffle.stake("1", stakeItems), "Raffle: Raffle does not exist")
+  })
+
+  it("🙆‍♂️  Should stake tickets to raffle", async function () {
     const stakeItems = [
       [voucherAddress, 0, 5],
       [voucherAddress, 1, 5],
@@ -75,12 +84,11 @@ describe('Raffle', function () {
     await raffle.stake("0", stakeItems)
   })
 
-  it("Should not draw a number before raffle ends", async function () {
+  it("🙆‍♂️  Should not draw a number before raffle ends", async function () {
     await truffleAssert.reverts(raffle.drawRandomNumber("0"), "Raffle: Raffle time has not expired")
   })
 
-  it("Should draw random number for each prize", async function () {
-
+  it("🙆‍♂️  Should draw random number for each prize", async function () {
     ethers.provider.send("evm_increaseTime", [86401])   // add 60 seconds
     await raffle.drawRandomNumber("0")
     const winners = await raffle['winners(uint256)']("0")
@@ -92,15 +100,37 @@ describe('Raffle', function () {
     });
   })
 
-  it("Cannot claim another random number", async function () {
+  it("🙆‍♂️  Should not stake after raffle ends", async function () {
+    const stakeItems = [
+      [voucherAddress, 2, 5],
+    ]
+    await truffleAssert.reverts(raffle.stake("0", stakeItems), "Raffle: Raffle time has expired")
+  })
+
+  it("🙅‍♀️  Cannot claim another random number", async function () {
     await truffleAssert.reverts(raffle.drawRandomNumber("0"), "Raffle: Random number already generated")
   })
 
-  it("Should claim prizes", async function () {
+  it("🙆‍♂️  Should claim prizes", async function () {
+    let balance = await vouchers.balanceOf(account, "0")
+    expect(balance).to.equal(0)
     await raffle.claimPrize("0")
     const winners = await raffle['winners(uint256)']("0")
     winners.forEach((obj) => {
       expect(obj.claimed).to.equal(true)
     });
+    balance = await vouchers.balanceOf(account, "0")
+    expect(balance).to.equal(5)
   })
+
+  it("🙅‍♀️  Cannot claim again", async function () {
+    await truffleAssert.reverts(raffle.claimPrize("0"), "Raffle: Any prizes for account have already been claimed")
+  })
+
+  it("🙅‍♀️  Should not have any open raffles", async function () {
+    const openRaffles = await raffle.openRaffles()
+    expect(openRaffles.length).to.equal(0)
+  })
+
+
 })
