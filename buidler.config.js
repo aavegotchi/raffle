@@ -1,5 +1,6 @@
 /* global task usePlugin ethers */
 usePlugin('@nomiclabs/buidler-waffle')
+usePlugin('buidler-gas-reporter')
 
 // This is a sample Buidler task. To learn how to create your own go to
 // https://buidler.dev/guides/create-task.html
@@ -16,6 +17,9 @@ task('accounts', 'Prints the list of accounts', async () => {
 // defaultNetwork, networks, solc, and paths.
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
+  gasReporter: {
+    enabled: true
+  },
   // This is a sample solc configuration that specifies which version of solc to use
   solc: {
     version: '0.7.3'

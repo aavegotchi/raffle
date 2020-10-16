@@ -33,5 +33,8 @@
   },
   "directories": {
     "test": "test"
+  },
+  "dependencies": {
+    "buidler-gas-reporter": "^0.1.4"
   }
 }
