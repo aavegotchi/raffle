@@ -82,7 +82,11 @@ describe('Raffle', function () {
     ]
     await raffle.stake('0', stakeItems)
     const stakerStats = await raffle.stakerStats('0')
-    console.log('staker stats:', stakerStats)
+    stakerStats.forEach((stake) => {
+      if (stake.stakeTotal > 0) {
+        expect(Number(stake.numberOfStakers)).to.greaterThan(0)
+      }
+    });
   })
 
   it('🙆‍♂️  Should not draw a number before raffle ends', async function () {
