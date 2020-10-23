@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.3;
+pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
 import "./interfaces/IERC1155.sol";
@@ -12,19 +12,19 @@ import "./interfaces/IERC165.sol";
 struct Vouchers {
     // user address => balance
     mapping(address => uint256) accountBalances;
-    uint96 totalSupply;
+    uint256 totalSupply;
 }
 
 struct AppStorage {
     mapping(bytes4 => bool) supportedInterfaces;
     mapping(address => mapping(address => bool)) approved;
-    mapping(uint256 => Vouchers) vouchers;
+    Vouchers[] vouchers;
     address uniV2PoolContract;
     string vouchersBaseUri;
     address contractOwner;
 }
 
-contract VouchersFacet is IERC1155 {
+contract VouchersContract is IERC1155 {
     AppStorage internal s;
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
@@ -32,7 +32,7 @@ contract VouchersFacet is IERC1155 {
 
     constructor(address _contractOwner) {
         s.contractOwner = _contractOwner;
-        s.vouchersBaseUri = "https://aavegotchi.com/metadata/";
+        // s.vouchersBaseUri = "";
 
         // adding ERC165 data
         s.supportedInterfaces[type(IERC165).interfaceId] = true;
@@ -40,26 +40,11 @@ contract VouchersFacet is IERC1155 {
 
         // ERC1155
         // ERC165 identifier for the main token standard.
-        s.supportedInterfaces[0xd9b67a26] = true;
+        s.supportedInterfaces[type(IERC1155).interfaceId] = true;
 
         // ERC1155
         // ERC1155Metadata_URI
-        s.supportedInterfaces[IERC1155Metadata_URI.uri.selector] = true;
-
-        // create wearable tickets:
-        for (uint256 i; i < 5; i++) {
-            uint256 id = i;
-            s.vouchers[id].accountBalances[msg.sender] += 10;
-            s.vouchers[id].totalSupply += 10;
-            emit TransferSingle(address(this), address(0), msg.sender, i, 10);
-        }
-
-        /* emit TransferSingle(address(this), address(0), address(0), 1, 0);
-        emit TransferSingle(address(this), address(0), address(0), 2, 0);
-        emit TransferSingle(address(this), address(0), address(0), 3, 0);
-        emit TransferSingle(address(this), address(0), address(0), 4, 0);
-        emit TransferSingle(address(this), address(0), address(0), 5, 0);
-        */
+        s.supportedInterfaces[type(IERC1155Metadata_URI).interfaceId] = true;
     }
 
     function owner() external view returns (address) {
@@ -68,21 +53,81 @@ contract VouchersFacet is IERC1155 {
 
     function transferOwnership(address _newContractOwner) external {
         address previousOwner = s.contractOwner;
-        require(msg.sender == previousOwner, "Raffle: Must be contract owner");
+        require(msg.sender == previousOwner, "Vouchers: Must be contract owner");
         s.contractOwner = _newContractOwner;
         emit OwnershipTransferred(previousOwner, _newContractOwner);
     }
 
+    function createVoucherTypes(
+        address _to,
+        uint256[] calldata _values,
+        bytes calldata _data
+    ) external {
+        require(_to != address(0), "Vouchers: Can't mint to 0 address");
+        require(msg.sender == s.contractOwner, "Vouchers: Must be contract owner");
+        uint256 vouchersIndex = s.vouchers.length;
+        uint256[] memory ids = new uint256[](_values.length);
+        for (uint256 i; i < _values.length; i++) {
+            ids[i] = vouchersIndex;
+            uint256 value = _values[i];
+            s.vouchers.push();
+            s.vouchers[vouchersIndex].totalSupply = value;
+            s.vouchers[vouchersIndex].accountBalances[_to] = value;
+            vouchersIndex++;
+        }
+        emit TransferBatch(msg.sender, address(0), _to, ids, _values);
+        uint256 size;
+        assembly {
+            size := extcodesize(_to)
+        }
+        if (size > 0) {
+            require(
+                ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, address(0), ids, _values, _data),
+                "Vouchers: Transfer rejected/failed by _to"
+            );
+        }
+    }
+
+    function mintVouchers(
+        address _to,
+        uint256[] calldata _ids,
+        uint256[] calldata _values,
+        bytes calldata _data
+    ) external {
+        require(_to != address(0), "Vouchers: Can't mint to 0 address");
+        require(msg.sender == s.contractOwner, "Vouchers: Must be contract owner");
+        require(_ids.length == _values.length, "Vouchers: _ids must be same length as _values");
+        uint256 vouchersLength = s.vouchers.length;
+        for (uint256 i; i < _values.length; i++) {
+            uint256 id = _ids[i];
+            require(id < vouchersLength, "Vouchers: id does not exist");
+            uint256 value = _values[i];
+            s.vouchers[id].totalSupply += value;
+            s.vouchers[id].accountBalances[_to] += value;
+        }
+        emit TransferBatch(msg.sender, address(0), _to, _ids, _values);
+        uint256 size;
+        assembly {
+            size := extcodesize(_to)
+        }
+        if (size > 0) {
+            require(
+                ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, address(0), _ids, _values, _data),
+                "Vouchers: Transfer rejected/failed by _to"
+            );
+        }
+    }
+
     function setBaseURI(string memory _value) external {
-        require(msg.sender == s.contractOwner, "Raffle: Must be contract owner");
+        require(msg.sender == s.contractOwner, "Vouchers: Must be contract owner");
         s.vouchersBaseUri = _value;
-        for (uint256 i; i < 6; i++) {
+        for (uint256 i; i < s.vouchers.length; i++) {
             emit URI(string(abi.encodePacked(_value, LibStrings.uintStr(i))), i);
         }
     }
 
     function uri(uint256 _id) external view returns (string memory) {
-        require(_id < 6, "_id not found for  ticket");
+        require(_id < s.vouchers.length, "_id not found for  ticket");
         return string(abi.encodePacked(s.vouchersBaseUri, LibStrings.uintStr(_id)));
     }
 
@@ -108,6 +153,7 @@ contract VouchersFacet is IERC1155 {
         bytes calldata _data
     ) external override {
         require(_to != address(0), "Vouchers: Can't transfer to 0 address");
+        require(_id < s.vouchers.length, "Vouchers: _id not found");
         require(_from == msg.sender || s.approved[_from][msg.sender], "Vouchers: Not approved to transfer");
         uint256 bal = s.vouchers[_id].accountBalances[_from];
         require(bal >= _value, "Vouchers: _value greater than balance");
@@ -152,8 +198,10 @@ contract VouchersFacet is IERC1155 {
         require(_to != address(0), "Vouchers: Can't transfer to 0 address");
         require(_ids.length == _values.length, "Vouchers: _ids not the same length as _values");
         require(_from == msg.sender || s.approved[_from][msg.sender], "Vouchers: Not approved to transfer");
+        uint256 vouchersLength = s.vouchers.length;
         for (uint256 i; i < _ids.length; i++) {
             uint256 id = _ids[i];
+            require(id < vouchersLength, "Vouchers: id not found");
             uint256 value = _values[i];
             uint256 bal = s.vouchers[id].accountBalances[_from];
             require(bal >= value, "Vouchers: _value greater than balance");
@@ -174,21 +222,22 @@ contract VouchersFacet is IERC1155 {
     }
 
     function totalSupplies() external view returns (uint256[] memory totalSupplies_) {
-        totalSupplies_ = new uint256[](6);
-        for (uint256 i; i < 6; i++) {
+        uint256 vouchersLength = s.vouchers.length;
+        totalSupplies_ = new uint256[](vouchersLength);
+        for (uint256 i; i < vouchersLength; i++) {
             totalSupplies_[i] = s.vouchers[i].totalSupply;
         }
     }
 
     function totalSupply(uint256 _id) external view returns (uint256 totalSupply_) {
-        require(_id < 6, "Vourchers:  Voucher not found");
+        require(_id < s.vouchers.length, "Vourchers:  Voucher not found");
         totalSupply_ = s.vouchers[_id].totalSupply;
     }
 
-    // returns the balance of each  voucher
     function balanceOfAll(address _owner) external view returns (uint256[] memory balances_) {
-        balances_ = new uint256[](6);
-        for (uint256 i; i < 6; i++) {
+        uint256 vouchersLength = s.vouchers.length;
+        balances_ = new uint256[](vouchersLength);
+        for (uint256 i; i < vouchersLength; i++) {
             balances_[i] = s.vouchers[i].accountBalances[_owner];
         }
     }
@@ -200,6 +249,7 @@ contract VouchersFacet is IERC1155 {
         @return balance_ The _owner's balance of the token type requested
      */
     function balanceOf(address _owner, uint256 _id) external view override returns (uint256 balance_) {
+        require(_id < s.vouchers.length, "Vouchers: _id not found");
         balance_ = s.vouchers[_id].accountBalances[_owner];
     }
 
@@ -211,9 +261,12 @@ contract VouchersFacet is IERC1155 {
      */
     function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids) external view override returns (uint256[] memory balances_) {
         require(_owners.length == _ids.length, "Vouchers: _owners not same length as _ids");
+        uint256 vouchersLength = s.vouchers.length;
         balances_ = new uint256[](_owners.length);
         for (uint256 i; i < _owners.length; i++) {
-            balances_[i] = s.vouchers[_ids[i]].accountBalances[_owners[i]];
+            uint256 id = _ids[i];
+            require(id < vouchersLength, "Vouchers: id not found");
+            balances_[i] = s.vouchers[id].accountBalances[_owners[i]];
         }
     }
 

@@ -86,7 +86,7 @@ describe('Raffle', function () {
       if (stake.stakeTotal > 0) {
         expect(Number(stake.numberOfStakers)).to.greaterThan(0)
       }
-    });
+    })
   })
 
   it('🙆‍♂️  Should not draw a number before raffle ends', async function () {

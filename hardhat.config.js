@@ -1,5 +1,6 @@
 /* global task ethers */
 require('@nomiclabs/hardhat-waffle')
+require('dotenv').config()
 
 // This is a sample Buidler task. To learn how to create your own go to
 // https://buidler.dev/guides/create-task.html
@@ -16,12 +17,19 @@ task('accounts', 'Prints the list of accounts', async () => {
 // defaultNetwork, networks, solc, and paths.
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
+  networks: {
+    kovan: {
+      url: process.env.KOVAN_URL,
+      accounts: [process.env.SECRET],
+      gasPrice: 20000000000
+    }
+  },
   gasReporter: {
     enabled: true
   },
   // This is a sample solc configuration that specifies which version of solc to use
   solidity: {
-    version: '0.7.3',
+    version: '0.7.4',
     settings: {
       optimizer: {
         enabled: true,

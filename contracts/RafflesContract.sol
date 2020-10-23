@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.7.3;
+pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
 // import "@nomiclabs/buidler/console.sol";
@@ -37,7 +37,7 @@ struct StakeItem {
 
 struct RafflePrize {
     address prizeAddress;
-    uint80 prizeValue;
+    uint96 prizeValue;
     uint256 prizeId;
 }
 
@@ -49,7 +49,7 @@ struct RaffleItem {
     uint256 prizeValue;
 }
 
-contract RaffleContract {
+contract RafflesContract {
     AppStorage internal s;
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -90,7 +90,7 @@ contract RaffleContract {
                 raffle.stakeItemIndexes[stakeAddress][stakeId] = stakeItemIndex;
             }
             raffle.rafflePrizes[stakeItemIndex - 1].push(
-                RafflePrize(_raffleItems[i].prizeAddress, uint80(_raffleItems[i].prizeValue), _raffleItems[i].prizeId)
+                RafflePrize(_raffleItems[i].prizeAddress, uint96(_raffleItems[i].prizeValue), _raffleItems[i].prizeId)
             );
             IERC1155(_raffleItems[i].prizeAddress).safeTransferFrom(
                 msg.sender,
@@ -177,7 +177,7 @@ contract RaffleContract {
                 raffleItems_[numRaffleIndex].stakeAddress = raffle.stakeItems[i].stakeAddress;
                 raffleItems_[numRaffleIndex].stakeId = raffle.stakeItems[i].stakeId;
                 raffleItems_[numRaffleIndex].prizeAddress = rafflePrizes[j].prizeAddress;
-                raffleItems_[numRaffleIndex].prizeAddress = rafflePrizes[j].prizeAddress;
+                raffleItems_[numRaffleIndex].prizeId = rafflePrizes[j].prizeId;
                 raffleItems_[numRaffleIndex].prizeValue = rafflePrizes[j].prizeValue;
                 numRaffleIndex++;
             }
