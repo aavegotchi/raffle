@@ -54,7 +54,7 @@ describe('Raffle', function () {
     const info = await raffle.raffleInfo('0')
     const raffleEnd = Number(info.raffleEnd_)
     expect(raffleEnd).to.greaterThan(Number((Date.now() / 1000).toFixed()))
-    expect
+
     expect(info.raffleItems_.length).to.equal(3)
 
     // Test openRaffles function

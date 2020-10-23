@@ -1,5 +1,7 @@
 {
+  "_format": "hh-sol-artifact-1",
   "contractName": "IERC173",
+  "sourceName": "contracts/interfaces/IERC173.sol",
   "abi": [
     {
       "anonymous": false,

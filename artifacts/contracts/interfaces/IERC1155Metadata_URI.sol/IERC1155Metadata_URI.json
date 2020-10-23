@@ -1,5 +1,7 @@
 {
+  "_format": "hh-sol-artifact-1",
   "contractName": "IERC1155Metadata_URI",
+  "sourceName": "contracts/interfaces/IERC1155Metadata_URI.sol",
   "abi": [
     {
       "inputs": [

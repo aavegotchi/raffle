@@ -1,5 +1,7 @@
 {
-  "contractName": "ERC1155TokenReceiver",
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IERC1155TokenReceiver",
+  "sourceName": "contracts/interfaces/IERC1155TokenReceiver.sol",
   "abi": [
     {
       "inputs": [

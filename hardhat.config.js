@@ -1,6 +1,5 @@
-/* global task usePlugin ethers */
-usePlugin('@nomiclabs/buidler-waffle')
-usePlugin('buidler-gas-reporter')
+/* global task ethers */
+require('@nomiclabs/hardhat-waffle')
 
 // This is a sample Buidler task. To learn how to create your own go to
 // https://buidler.dev/guides/create-task.html
@@ -21,11 +20,13 @@ module.exports = {
     enabled: true
   },
   // This is a sample solc configuration that specifies which version of solc to use
-  solc: {
+  solidity: {
     version: '0.7.3',
-    optimizer: {
-      enabled: true,
-      runs: 20000
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 20000
+      }
     }
   }
 }
