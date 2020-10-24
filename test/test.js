@@ -89,12 +89,22 @@ describe('Raffle', function () {
     await truffleAssert.reverts(raffle.stake('0', stakeItems), 'Stake value cannot be zero')
   })
 
+  it('Cannot stake prizes that dont exist', async function () {
+    const stakeItems = [
+      [voucherAddress, 6, 1]
+    ]
+    await truffleAssert.reverts(raffle.stake('0', stakeItems), 'Raffle: Stake item doesn\'t exist for this raffle')
+  })
+
   it('🙆‍♂️  Should stake tickets to raffle', async function () {
     const stakeItems = [
-      [voucherAddress, 0, 3],
-      [voucherAddress, 0, 2],
 
-      [voucherAddress, 1, 5]
+      //I'm staking twice, but since it's the same account
+      [voucherAddress, 0, 3],
+      [voucherAddress, 0, 1],
+      [voucherAddress, 0, 1],
+      [voucherAddress, 1, 5],
+      [voucherAddress, 2, 1],
     ]
     await raffle.stake('0', stakeItems)
     const stakerStats = await raffle.stakerStats('0')
