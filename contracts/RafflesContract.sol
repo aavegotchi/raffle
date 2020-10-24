@@ -2,7 +2,7 @@
 pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
-// import "@nomiclabs/buidler/console.sol";
+import "hardhat/console.sol";
 
 import "./interfaces/IERC1155.sol";
 
@@ -280,6 +280,7 @@ contract RafflesContract {
     }
 
     function winners(uint256 _raffleId, address[] memory _stakers) public view returns (Winner[] memory winners_) {
+        console.log("stakers length: %s",_stakers.length);
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
@@ -292,6 +293,7 @@ contract RafflesContract {
                 numRaffleItems += rafflePrizes.length;
             }
             winners_ = new Winner[](_stakers.length * numRaffleItems);
+            console.log('winners length: %s',winners_.length);
         }
         uint256 winnersNum;
         for (uint256 h; h < _stakers.length; h++) {
@@ -312,6 +314,9 @@ contract RafflesContract {
                         }
                     }
                     if (winnings > 0) {
+                            console.log("winnings: %s",winnings);
+                            console.log("winners num %s:",winnersNum);
+                            require(winnersNum < winners_.length,"Invalid winnersnum length");
                         winners_[winnersNum] = Winner(staker, raffle.prizeClaimed[msg.sender], prizeAddress, prizeId, winnings);
                         winnersNum++;
                     }
