@@ -15,14 +15,16 @@ describe('Raffle', function () {
     console.log('Account: ' + account)
     console.log('---')
 
-    const RaffleContract = await ethers.getContractFactory('RaffleContract')
+    const RaffleContract = await ethers.getContractFactory('RafflesContract')
     raffle = await RaffleContract.deploy(account)
     await raffle.deployed()
 
-    const VoucherContract = await ethers.getContractFactory('VouchersFacet')
+    const VoucherContract = await ethers.getContractFactory('VouchersContract')
     vouchers = await VoucherContract.deploy(account)
     await vouchers.deployed()
     voucherAddress = vouchers.address
+
+    await vouchers.createVoucherTypes(account, ["10", "10", "10", "10", "10", "10"], [])
   })
 
   it('🙆‍♂️  Should have 10 of each ticket', async function () {
