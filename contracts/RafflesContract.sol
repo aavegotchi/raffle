@@ -238,6 +238,7 @@ contract RafflesContract {
             address stakeAddress = _stakeItems[i].stakeAddress;
             uint256 stakeId = _stakeItems[i].stakeId;
             uint256 stakeValue = _stakeItems[i].stakeValue;
+            require(stakeValue > 0, "Stake value cannot be zero");
             uint256 stakeItemIndex = raffle.stakeItemIndexes[stakeAddress][stakeId];
             require(stakeItemIndex > 0, "Raffle: Stake item doesn't exist for this raffle");
             stakeItemIndex--;
