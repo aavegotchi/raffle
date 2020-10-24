@@ -191,6 +191,14 @@ contract RafflesContract {
         uint256 stakeTotal;
     }
 
+ 
+    function individualStats(address _address, uint256 _raffleId) external view returns (UserStake[] memory userStake) {
+        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
+        Raffle storage raffle = s.raffles[_raffleId];
+        userStake = raffle.userStakes[_address];
+        
+    }
+
     function stakerStats(uint256 _raffleId) external view returns (StakerStats[] memory stakerStats_) {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
