@@ -83,14 +83,14 @@ describe('Raffle', function () {
     await truffleAssert.reverts(raffle.stake('1', stakeItems), 'Raffle: Raffle does not exist')
   })
 
-  it('Cannot stake zero values', async function () {
+  it('🙅‍♀️  Cannot stake zero values', async function () {
     const stakeItems = [
       [voucherAddress, 0, 0]
     ]
     await truffleAssert.reverts(raffle.stake('0', stakeItems), 'Stake value cannot be zero')
   })
 
-  it('Cannot stake prizes that dont exist', async function () {
+  it('🙅‍♀️  Cannot stake prizes that dont exist', async function () {
     const stakeItems = [
       [voucherAddress, 6, 1]
     ]
@@ -120,6 +120,7 @@ describe('Raffle', function () {
 
   it('🙆‍♂️  Should view individual staking stats', async function () {
     const stats = await raffle.stakerStats('0', account)
+    expect(stats.length).to.equal(6)
     //  expect(stats[0].rangeStart).to.equal(0)
     //  expect(stats[0].rangeEnd).to.equal(3)
     // console.log('Staker stats:')
@@ -137,7 +138,7 @@ describe('Raffle', function () {
     console.log(winners)
     const winner = winners[0]
     expect(winner.staker).to.equal(account)
-    expect(winners.length).to.equal(2)
+    expect(winners.length).to.equal(4)
     winners.forEach((obj) => {
       expect(obj.claimed).to.equal(false)
     })
