@@ -70,11 +70,12 @@ async function main () {
   console.log('Approved raffleContract to transfer vouchers')
   const now = new Date()
   const secondsSinceEpoch = Math.round(now.getTime() / 1000)
-  const aWeek = 604800// 604800 == 1 week
+  const aWeek = 604800 * 2// 604800 == 1 week
+  console.log(raffleItems)
   await rafflesContract.startRaffle(secondsSinceEpoch + aWeek, raffleItems)
   console.log('Started raffle')
   console.log('Here are the raffle items:')
-  console.log(JSON.stringify(raffleItems, null, 4))
+  console.log(JSON.stringify(raffleItems, null, 2))
 }
 
 // We recommend this pattern to be able to use async/await everywhere

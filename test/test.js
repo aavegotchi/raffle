@@ -134,7 +134,7 @@ describe('Raffle', function () {
     ethers.provider.send('evm_increaseTime', [86401]) // add 60 seconds
     await raffle.drawRandomNumber('0')
     const winners = await raffle['winners(uint256)']('0')
-    // console.log(winners)
+    console.log(winners)
     const winner = winners[0]
     expect(winner.staker).to.equal(account)
     expect(winners.length).to.equal(2)
