@@ -61,6 +61,19 @@ describe('Raffle', function () {
     expect(balancesCaasper[1]).to.equal(10)
   })
 
+  it('🙆‍♂️  Only contract owner can start raffle', async function () {
+    const items = [[voucherAddress, '0', [[voucherAddress, '0', '5']]]]
+    const raffleEndTime = Number((Date.now() / 1000).toFixed()) + 86400
+    await truffleAssert.reverts(bobRaffle.startRaffle(raffleEndTime, items), "Raffle: Must be contract owner")
+  })
+
+  it('🙅‍♀️  Cannot start a raffle before now', async function () {
+    const items = [[voucherAddress, '0', [[voucherAddress, '0', '5']]]]
+    const raffleEndTime = Number((Date.now() / 1000).toFixed()) - 86400
+    await truffleAssert.reverts(raffle.startRaffle(raffleEndTime, items), "Raffle: _raffleEnd must be greater than 1 hour")
+  })
+
+
   it('🙆‍♂️  Should start raffle', async function () {
 
     const items = [
