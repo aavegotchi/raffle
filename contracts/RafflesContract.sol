@@ -84,7 +84,7 @@ struct WinnerIO {
     bool claimed;
     address prizeAddress;
     uint256 prizeId;
-    uint256 prizeValue;
+    uint256[] prizeValues;
 }
 
 contract RafflesContract {
@@ -195,15 +195,9 @@ contract RafflesContract {
 
     function getRaffles() external view returns (OpenRaffleIO[] memory raffles_) {
         raffles_ = new OpenRaffleIO[](s.raffles.length);
-        uint256 numOpen;
-         for (uint256 i; i < s.raffles.length; i++) {
-            uint256 raffleEnd = s.raffles[i].raffleEnd;
-                raffles_[numOpen].raffleId = i;
-                raffles_[numOpen].raffleEnd = raffleEnd;
-                numOpen++;
-        }
-        assembly {
-            mstore(raffles_, numOpen)
+        for (uint256 i; i < s.raffles.length; i++) {
+            raffles_[i].raffleId = i;
+            raffles_[i].raffleEnd = s.raffles[i].raffleEnd;
         }
     }
 
@@ -211,16 +205,22 @@ contract RafflesContract {
         raffleSupply_ = s.raffles.length;
     }
 
-    function raffleInfo(uint256 _raffleId) external view returns (uint256 raffleEnd_, RaffleItemIO[] memory raffleItems_, bool numberChosen_) {
+    function raffleInfo(uint256 _raffleId)
+        external
+        view
+        returns (
+            uint256 raffleEnd_,
+            RaffleItemIO[] memory raffleItems_,
+            bool numberChosen_
+        )
+    {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         raffleEnd_ = raffle.raffleEnd;
 
-
         if (raffle.randomNumber == 0) {
             numberChosen_ = false;
-        }
-        else {
+        } else {
             numberChosen_ = true;
         }
 
@@ -322,7 +322,6 @@ contract RafflesContract {
     function winners(uint256 _raffleId, address[] memory _stakers) public view returns (WinnerIO[] memory winners_) {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
-        require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
         uint256 randomNumber = raffle.randomNumber;
         require(randomNumber > 0, "Raffle: Random number not generated yet");
         {
@@ -338,24 +337,27 @@ contract RafflesContract {
         uint256 winnersNum;
         for (uint256 h; h < _stakers.length; h++) {
             address staker = _stakers[h];
-            UserStake[] storage userStakes = raffle.userStakes[staker];
-            for (uint256 i; i < userStakes.length; i++) {
-                UserStake storage userStake = userStakes[i];
+            for (uint256 i; i < raffle.userStakes[staker].length; i++) {
+                UserStake storage userStake = raffle.userStakes[staker][i];
                 uint256 stakeTotal = raffle.raffleItems[userStake.raffleItemIndex].stakeTotal;
                 RafflePrize[] storage rafflePrizes = raffle.raffleItems[userStake.raffleItemIndex].rafflePrizes;
                 for (uint256 j; j < rafflePrizes.length; j++) {
                     uint256 winnings;
                     address prizeAddress = rafflePrizes[j].prizeAddress;
                     uint256 prizeId = rafflePrizes[j].prizeId;
+                    uint256[] memory prizeValues = new uint256[](rafflePrizes[j].prizeValue);
                     for (uint256 k; k < rafflePrizes[j].prizeValue; k++) {
                         uint256 winningNumber = uint256(keccak256(abi.encodePacked(randomNumber, prizeAddress, prizeId, k))) % stakeTotal;
                         if (winningNumber >= userStake.rangeStart && winningNumber < userStake.rangeEnd) {
+                            prizeValues[winnings] = k;
                             winnings++;
                         }
                     }
                     if (winnings > 0) {
-                        require(winnersNum < winners_.length, "Invalid winnersnum length");
-                        winners_[winnersNum] = WinnerIO(staker, raffle.prizeClaimed[msg.sender], prizeAddress, prizeId, winnings);
+                        assembly {
+                            mstore(prizeValues, winnings)
+                        }
+                        winners_[winnersNum] = WinnerIO(staker, raffle.prizeClaimed[msg.sender], prizeAddress, prizeId, prizeValues);
                         winnersNum++;
                     }
                 }
@@ -366,10 +368,63 @@ contract RafflesContract {
         }
     }
 
+    /*
+    function combineStakerWinnings(WinnerIO[] memory _winners) internal pure returns (WinnerIO[] memory winners_) {
+        winners_ = new WinnerIO[](_winners.length);
+        uint256 numWinners;
+        for(uint256 i; i > _winners.length; i++) {
+            bool found = false;
+            for(uint256 j; j < numWinners; j++) {
+                if(_winners.staker === )
+            }
+        }
+    }
+*/
+    function claimPrize(uint256 _raffleId, WinnerIO[] calldata _won) external {
+        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
+        Raffle storage raffle = s.raffles[_raffleId];
+        require(raffle.randomNumber > 0, "Raffle: Random number not generated yet");
+        require(raffle.prizeClaimed[msg.sender] == false, "Raffle: Any prizes for account have already been claimed");
+        raffle.prizeClaimed[msg.sender] = true;
+        require(raffle.userStakes[msg.sender].length >= _won.length, "Raffle: _won can't be greater than userStakes");
+        uint256 stakesWon = 0;
+        for (uint256 i; i < raffle.userStakes[msg.sender].length; i++) {
+            UserStake storage userStake = raffle.userStakes[msg.sender][i];
+            uint256 stakeTotal = raffle.raffleItems[userStake.raffleItemIndex].stakeTotal;
+            RafflePrize[] storage rafflePrizes = raffle.raffleItems[userStake.raffleItemIndex].rafflePrizes;
+            for (uint256 j; j < rafflePrizes.length; j++) {
+                address prizeAddress = rafflePrizes[j].prizeAddress;
+                if (prizeAddress != _won[stakesWon].prizeAddress) {
+                    continue;
+                }
+                uint256 prizeId = rafflePrizes[j].prizeId;
+                if (prizeId != _won[stakesWon].prizeId) {
+                    continue;
+                }
+                uint256[] memory prizeValues = _won[stakesWon].prizeValues;
+                uint256[] memory checkDuplicates = new uint256[](_won[stakesWon].prizeValues.length);
+                uint256 totalPrizes = rafflePrizes[j].prizeValue;
+                for (uint256 k; k < prizeValues.length; k++) {
+                    uint256 prizeValue = prizeValues[k];
+                    for (uint256 l; l < k; l++) {
+                        require(checkDuplicates[l] != prizeValue, "Raffle: Duplicate prizes given");
+                    }
+                    checkDuplicates[k] = prizeValue;
+                    require(prizeValue < totalPrizes, "Raffle: prizeValue does not exist");
+                    uint256 winningNumber = uint256(keccak256(abi.encodePacked(raffle.randomNumber, prizeAddress, prizeId, prizeValue))) % stakeTotal;
+                    require(winningNumber >= userStake.rangeStart && winningNumber < userStake.rangeEnd, "Raffle: Did not win prize");
+                }
+                emit RaffleClaimPrize(_raffleId, msg.sender, prizeAddress, prizeId, prizeValues.length);
+                IERC1155(prizeAddress).safeTransferFrom(address(this), msg.sender, prizeId, prizeValues.length, "");
+                stakesWon++;
+            }
+        }
+        require(stakesWon == _won.length, "Raffle: Not all supplied prizes were won");
+    }
+
     function claimPrize(uint256 _raffleId) external {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
-        require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
         uint256 randomNumber = raffle.randomNumber;
         require(randomNumber > 0, "Raffle: Random number not generated yet");
         require(raffle.prizeClaimed[msg.sender] == false, "Raffle: Any prizes for account have already been claimed");
