@@ -24,7 +24,7 @@ async function main () {
     throw Error('No network settings for ' + hre.network.name)
   }
 
-  const prizes = []
+  const prizeValues = []
   const raffleItems = []
   let prizeId = 0
   let prizeValue
@@ -48,11 +48,15 @@ async function main () {
     } else {
       jLength = 3
     }
+    const prizeItems = []
+    raffleItems.push({
+      stakeAddress: stakeAddress,
+      stakeId: stakeId,
+      rafflePrizes: prizeItems
+    })
     for (let j = 0; j < jLength; j++) {
-      prizes.push(prizeValue)
-      raffleItems.push({
-        stakeAddress: stakeAddress,
-        stakeId: stakeId,
+      prizeValues.push(prizeValue)
+      prizeItems.push({
         prizeAddress: prizeAddress,
         prizeId: prizeId,
         prizeValue: prizeValue
@@ -60,7 +64,7 @@ async function main () {
       prizeId++
     }
   }
-  await vouchersContract.createVoucherTypes(account, prizes, '0x')
+  await vouchersContract.createVoucherTypes(account, prizeValues, '0x')
   console.log('Created voucher types and minted vouchers')
   await vouchersContract.setApprovalForAll(rafflesContract.address, true)
   console.log('Approved raffleContract to transfer vouchers')
@@ -70,7 +74,7 @@ async function main () {
   await rafflesContract.startRaffle(secondsSinceEpoch + aWeek, raffleItems)
   console.log('Started raffle')
   console.log('Here are the raffle items:')
-  console.log(raffleItems)
+  console.log(JSON.stringify(raffleItems, null, 4))
 }
 
 // We recommend this pattern to be able to use async/await everywhere

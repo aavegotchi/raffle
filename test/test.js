@@ -29,7 +29,7 @@ describe('Raffle', function () {
     await vouchers.deployed()
     voucherAddress = vouchers.address
 
-    await vouchers.createVoucherTypes(account, ["10", "10", "10", "10", "10", "10"], [])
+    await vouchers.createVoucherTypes(account, ['10', '10', '10', '10', '10', '10'], [])
   })
 
   it('🙆‍♂️  Should have 10 of each ticket', async function () {
@@ -48,9 +48,9 @@ describe('Raffle', function () {
     // uint256 prizeId; //The specific item of the item
     // uint256 prizeValue;
     const items = [
-      [voucherAddress, '0', voucherAddress, '0', '5'],
-      [voucherAddress, '1', voucherAddress, '1', '5'],
-      [voucherAddress, '2', voucherAddress, '2', '5']
+      [voucherAddress, '0', [[voucherAddress, '0', '5']]],
+      [voucherAddress, '1', [[voucherAddress, '1', '5']]],
+      [voucherAddress, '2', [[voucherAddress, '2', '5']]]
     ]
 
     // Approve vouchers to transfer
@@ -60,6 +60,7 @@ describe('Raffle', function () {
     await raffle.startRaffle(raffleEndTime, items)
     const info = await raffle.raffleInfo('0')
     const raffleEnd = Number(info.raffleEnd_)
+
     expect(raffleEnd).to.greaterThan(Number((Date.now() / 1000).toFixed()))
 
     expect(info.raffleItems_.length).to.equal(3)
@@ -84,7 +85,7 @@ describe('Raffle', function () {
 
   it('Cannot stake zero values', async function () {
     const stakeItems = [
-      [voucherAddress, 0, 0],
+      [voucherAddress, 0, 0]
     ]
     await truffleAssert.reverts(raffle.stake('0', stakeItems), 'Stake value cannot be zero')
   })
@@ -99,17 +100,17 @@ describe('Raffle', function () {
   it('🙆‍♂️  Should stake tickets to raffle', async function () {
     const stakeItems = [
 
-      //I'm staking twice, but since it's the same account
+      // I'm staking twice, but since it's the same account
       [voucherAddress, 0, 1],
       [voucherAddress, 0, 1],
       [voucherAddress, 0, 1],
       [voucherAddress, 0, 1],
       [voucherAddress, 0, 1],
-      [voucherAddress, 1, 5],
+      [voucherAddress, 1, 5]
       // [voucherAddress, 2, 1],
     ]
     await raffle.stake('0', stakeItems)
-    const stakerStats = await raffle.stakerStats('0')
+    const stakerStats = await raffle.stakeStats('0')
     stakerStats.forEach((stake) => {
       if (stake.stakeTotal > 0) {
         expect(Number(stake.numberOfStakers)).to.greaterThan(0)
@@ -118,9 +119,11 @@ describe('Raffle', function () {
   })
 
   it('🙆‍♂️  Should view individual staking stats', async function () {
-    const stats = await raffle.individualStats(account, '0')
+    const stats = await raffle.stakerStats('0', account)
     //  expect(stats[0].rangeStart).to.equal(0)
     //  expect(stats[0].rangeEnd).to.equal(3)
+    // console.log('Staker stats:')
+    // console.log(stats)
   })
 
   it('🙆‍♂️  Should not draw a number before raffle ends', async function () {
@@ -131,6 +134,7 @@ describe('Raffle', function () {
     ethers.provider.send('evm_increaseTime', [86401]) // add 60 seconds
     await raffle.drawRandomNumber('0')
     const winners = await raffle['winners(uint256)']('0')
+    // console.log(winners)
     const winner = winners[0]
     expect(winner.staker).to.equal(account)
     expect(winners.length).to.equal(2)

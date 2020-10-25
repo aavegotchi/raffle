@@ -1,6 +1,6 @@
 /* global task ethers */
 require('@nomiclabs/hardhat-waffle')
-require("@nomiclabs/hardhat-ethers");
+require('@nomiclabs/hardhat-ethers')
 require('dotenv').config()
 
 // This is a sample Buidler task. To learn how to create your own go to
