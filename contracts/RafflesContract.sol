@@ -297,7 +297,6 @@ contract RafflesContract {
     }
 
     function winners(uint256 _raffleId, address[] memory _stakers) public view returns (WinnerIO[] memory winners_) {
-        console.log("stakers length: %s", _stakers.length);
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
@@ -312,7 +311,6 @@ contract RafflesContract {
                 }
             }
             winners_ = new WinnerIO[](numRafflePrizes);
-            console.log("winners length: %s", winners_.length);
         }
         uint256 winnersNum;
         for (uint256 h; h < _stakers.length; h++) {
@@ -333,8 +331,6 @@ contract RafflesContract {
                         }
                     }
                     if (winnings > 0) {
-                        console.log("winnings: %s", winnings);
-                        console.log("winners num %s:", winnersNum);
                         require(winnersNum < winners_.length, "Invalid winnersnum length");
                         winners_[winnersNum] = WinnerIO(staker, raffle.prizeClaimed[msg.sender], prizeAddress, prizeId, winnings);
                         winnersNum++;
