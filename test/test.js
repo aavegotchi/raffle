@@ -22,8 +22,6 @@ describe('Raffle', function () {
     caasper = await accounts[2]
     caasperAddress = await accounts[2].getAddress()
 
-
-
     console.log('Account: ' + account)
     console.log('---')
 
@@ -52,9 +50,9 @@ describe('Raffle', function () {
     expect(totalSupply).to.equal(10)
   })
 
-  it("🙆‍♂️  Bob and Caasper should have 10 of each ticket", async function () {
-    await vouchers.mintVouchers(bobAddress, ["0", "1", "2", "3", "4", "5"], ["10", "10", "10", "10", "10", "10"], [])
-    await vouchers.mintVouchers(caasperAddress, ["0", "1", "2", "3", "4", "5"], ["10", "10", "10", "10", "10", "10"], [])
+  it('🙆‍♂️  Bob and Caasper should have 10 of each ticket', async function () {
+    await vouchers.mintVouchers(bobAddress, ['0', '1', '2', '3', '4', '5'], ['10', '10', '10', '10', '10', '10'], [])
+    await vouchers.mintVouchers(caasperAddress, ['0', '1', '2', '3', '4', '5'], ['10', '10', '10', '10', '10', '10'], [])
     const balancesBob = await vouchers.balanceOfAll(bobAddress)
     const balancesCaasper = await vouchers.balanceOfAll(bobAddress)
     expect(balancesBob[0]).to.equal(10)
@@ -64,18 +62,16 @@ describe('Raffle', function () {
   it('🙆‍♂️  Only contract owner can start raffle', async function () {
     const items = [[voucherAddress, '0', [[voucherAddress, '0', '5']]]]
     const raffleEndTime = Number((Date.now() / 1000).toFixed()) + 86400
-    await truffleAssert.reverts(bobRaffle.startRaffle(raffleEndTime, items), "Raffle: Must be contract owner")
+    await truffleAssert.reverts(bobRaffle.startRaffle(raffleEndTime, items), 'Raffle: Must be contract owner')
   })
 
   it('🙅‍♀️  Cannot start a raffle before now', async function () {
     const items = [[voucherAddress, '0', [[voucherAddress, '0', '5']]]]
     const raffleEndTime = Number((Date.now() / 1000).toFixed()) - 86400
-    await truffleAssert.reverts(raffle.startRaffle(raffleEndTime, items), "Raffle: _raffleEnd must be greater than 1 hour")
+    await truffleAssert.reverts(raffle.startRaffle(raffleEndTime, items), 'Raffle: _raffleEnd must be greater than 1 hour')
   })
 
-
   it('🙆‍♂️  Should start raffle', async function () {
-
     const items = [
       [voucherAddress, '0', [[voucherAddress, '0', '5']]],
       [voucherAddress, '1', [[voucherAddress, '1', '5']]],
@@ -129,8 +125,8 @@ describe('Raffle', function () {
   })
 
   it('🙆‍♂️  Should approve tickets to be transferred', async function () {
-    let bobVouchers = vouchers.connect(bob)
-    let caasperVouchers = vouchers.connect(caasper)
+    const bobVouchers = vouchers.connect(bob)
+    const caasperVouchers = vouchers.connect(caasper)
     await bobVouchers.setApprovalForAll(raffleAddress, true)
     await caasperVouchers.setApprovalForAll(raffleAddress, true)
     const bobApproved = await vouchers.isApprovedForAll(bobAddress, raffleAddress)
@@ -153,10 +149,9 @@ describe('Raffle', function () {
 
     const bobItems = [
       // I'm staking twice, but since it's the same account
-      [voucherAddress, 0, 10],
+      [voucherAddress, 0, 10]
       // [voucherAddress, 2, 1],
     ]
-
 
     const caasperItems = [
       // I'm staking twice, but since it's the same account
@@ -172,24 +167,19 @@ describe('Raffle', function () {
 
     const stakerStats = await raffle.stakeStats('0')
     stakerStats.forEach((stake) => {
-
-      let numberOfStakers = Number(stake.numberOfStakers)
-      let stakeTotal = Number(stake.stakeTotal)
-
+      const numberOfStakers = Number(stake.numberOfStakers)
+      const stakeTotal = Number(stake.stakeTotal)
 
       if (stake.stakeId === 0) {
         expect(numberOfStakers).to.equal(3)
         expect(stakeTotal).to.equal(25)
-      }
-      else if (stake.stakeId === 1) {
+      } else if (stake.stakeId === 1) {
         expect(numberOfStakers).to.equal(2)
         expect(stakeTotal).to.equal(15)
-      }
-      else if (stake.stakeId === 2) {
+      } else if (stake.stakeId === 2) {
         expect(numberOfStakers).to.equal(1)
         expect(stakeTotal).to.equal(10)
       }
-
     })
   })
 
@@ -241,13 +231,13 @@ describe('Raffle', function () {
       expect(obj.claimed).to.equal(true)
     })
     balance = await vouchers.balanceOf(account, '0')
-    let bobBalance = await vouchers.balanceOf(bobAddress, '0')
-    let caasperBalance = await vouchers.balanceOf(caasperAddress, '0')
-    let total = Number(balance) + Number(bobBalance) + Number(caasperBalance)
+    const bobBalance = await vouchers.balanceOf(bobAddress, '0')
+    const caasperBalance = await vouchers.balanceOf(caasperAddress, '0')
+    const total = Number(balance) + Number(bobBalance) + Number(caasperBalance)
 
-    let contractBalance = await vouchers.balanceOf(raffleAddress, '0')
+    const contractBalance = await vouchers.balanceOf(raffleAddress, '0')
 
-    //There are still 25 tickets remaining in the raffle 
+    // There are still 25 tickets remaining in the raffle
     expect(contractBalance).to.equal(25)
     expect(total).to.equal(5)
   })
@@ -263,5 +253,28 @@ describe('Raffle', function () {
   it('🙆‍♂️  Should view closed raffle', async function () {
     const raffles = await raffle.getRaffles()
     expect(raffles.length).to.equal(1)
+  })
+
+  it('🙆‍♂️  Should start second raffle', async function () {
+    await vouchers.createVoucherTypes(account, ['10', '10', '10'], [])
+    const items = [
+      [voucherAddress, '6', [[voucherAddress, '6', '5']]],
+      [voucherAddress, '7', [[voucherAddress, '7', '5']]],
+      [voucherAddress, '8', [[voucherAddress, '8', '5']]]
+    ]
+    const raffleEndTime = Number((Date.now() / 1000).toFixed()) + 86400 * 2
+    await raffle.startRaffle(raffleEndTime, items)
+    const info = await raffle.raffleInfo('1')
+
+    const raffleEnd = Number(info.raffleEnd_)
+
+    expect(info.numberChosen_).to.equal(false)
+    expect(raffleEnd).to.greaterThan(Number((Date.now() / 1000).toFixed()))
+
+    expect(info.raffleItems_.length).to.equal(3)
+
+    // Test openRaffles function
+    const openRaffles = await raffle.openRaffles()
+    expect(openRaffles.length).to.equal(1)
   })
 })
