@@ -2,7 +2,7 @@
 
 const { deployContracts } = require('./deploy.js')
 
-async function main () {
+async function main() {
   const accounts = await ethers.getSigners()
   const account = await accounts[0].getAddress()
   let stakeAddress
@@ -64,18 +64,23 @@ async function main () {
       prizeId++
     }
   }
+
+  //First raffle, 3 days
   await vouchersContract.createVoucherTypes(account, prizeValues, '0x')
   console.log('Created voucher types and minted vouchers')
   await vouchersContract.setApprovalForAll(rafflesContract.address, true)
   console.log('Approved raffleContract to transfer vouchers')
-  const now = new Date()
-  const secondsSinceEpoch = Math.round(now.getTime() / 1000)
-  const aWeek = 604800 * 2// 604800 == 1 week
+  let now = new Date()
+  let secondsSinceEpoch = Math.round(now.getTime() / 1000)
+  // const aWeek = 604800 * 2// 604800 == 1 week
+  const threeDays = 4800
   console.log(raffleItems)
-  await rafflesContract.startRaffle(secondsSinceEpoch + aWeek, raffleItems)
+  await rafflesContract.startRaffle(secondsSinceEpoch + threeDays, raffleItems)
   console.log('Started raffle')
   console.log('Here are the raffle items:')
   console.log(JSON.stringify(raffleItems, null, 2))
+
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere

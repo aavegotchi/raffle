@@ -211,10 +211,19 @@ contract RafflesContract {
         raffleSupply_ = s.raffles.length;
     }
 
-    function raffleInfo(uint256 _raffleId) external view returns (uint256 raffleEnd_, RaffleItemIO[] memory raffleItems_) {
+    function raffleInfo(uint256 _raffleId) external view returns (uint256 raffleEnd_, RaffleItemIO[] memory raffleItems_, bool numberChosen_) {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         raffleEnd_ = raffle.raffleEnd;
+
+
+        if (raffle.randomNumber == 0) {
+            numberChosen_ = false;
+        }
+        else {
+            numberChosen_ = true;
+        }
+
         raffleItems_ = new RaffleItemIO[](raffle.raffleItems.length);
         for (uint256 i; i < raffle.raffleItems.length; i++) {
             RaffleItem storage raffleItem = raffle.raffleItems[i];

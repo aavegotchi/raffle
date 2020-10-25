@@ -88,8 +88,10 @@ describe('Raffle', function () {
     const raffleEndTime = Number((Date.now() / 1000).toFixed()) + 86400
     await raffle.startRaffle(raffleEndTime, items)
     const info = await raffle.raffleInfo('0')
+
     const raffleEnd = Number(info.raffleEnd_)
 
+    expect(info.numberChosen_).to.equal(false)
     expect(raffleEnd).to.greaterThan(Number((Date.now() / 1000).toFixed()))
 
     expect(info.raffleItems_.length).to.equal(3)
@@ -203,9 +205,9 @@ describe('Raffle', function () {
   it('🙆‍♂️  Should draw random number for each prize', async function () {
     ethers.provider.send('evm_increaseTime', [86401]) // add 60 seconds
     await raffle.drawRandomNumber('0')
+
+    const raffleInfo = await raffle.raffleInfo('0')
     const winners = await raffle['winners(uint256)']('0')
-
-
     let totalPrizes = 0
 
     winners.forEach((obj) => {
@@ -213,6 +215,7 @@ describe('Raffle', function () {
       expect(obj.claimed).to.equal(false)
     })
 
+    expect(raffleInfo.numberChosen_).to.equal(true)
     expect(totalPrizes).to.equal(15)
   })
 
@@ -257,9 +260,8 @@ describe('Raffle', function () {
     const openRaffles = await raffle.openRaffles()
     expect(openRaffles.length).to.equal(0)
   })
-  it('🙅‍♀️  Should view closed raffle', async function () {
+  it('🙆‍♂️  Should view closed raffle', async function () {
     const raffles = await raffle.getRaffles()
-    console.log('raffles:', raffles)
-    // expect(openRaffles.length).to.equal(0)
+    expect(raffles.length).to.equal(1)
   })
 })
