@@ -257,4 +257,9 @@ describe('Raffle', function () {
     const openRaffles = await raffle.openRaffles()
     expect(openRaffles.length).to.equal(0)
   })
+  it('🙅‍♀️  Should view closed raffle', async function () {
+    const raffles = await raffle.getRaffles()
+    console.log('raffles:', raffles)
+    // expect(openRaffles.length).to.equal(0)
+  })
 })

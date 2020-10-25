@@ -193,6 +193,20 @@ contract RafflesContract {
         }
     }
 
+    function getRaffles() external view returns (OpenRaffleIO[] memory raffles_) {
+        raffles_ = new OpenRaffleIO[](s.raffles.length);
+        uint256 numOpen;
+         for (uint256 i; i < s.raffles.length; i++) {
+            uint256 raffleEnd = s.raffles[i].raffleEnd;
+                raffles_[numOpen].raffleId = i;
+                raffles_[numOpen].raffleEnd = raffleEnd;
+                numOpen++;
+        }
+        assembly {
+            mstore(raffles_, numOpen)
+        }
+    }
+
     function raffleSupply() external view returns (uint256 raffleSupply_) {
         raffleSupply_ = s.raffles.length;
     }
