@@ -386,36 +386,34 @@ contract RafflesContract {
         require(raffle.randomNumber > 0, "Raffle: Random number not generated yet");
         require(raffle.prizeClaimed[msg.sender] == false, "Raffle: Any prizes for account have already been claimed");
         raffle.prizeClaimed[msg.sender] = true;
-        require(raffle.userStakes[msg.sender].length >= _won.length, "Raffle: _won can't be greater than userStakes");
         uint256 stakesWon = 0;
         for (uint256 i; i < raffle.userStakes[msg.sender].length; i++) {
             UserStake storage userStake = raffle.userStakes[msg.sender][i];
             uint256 stakeTotal = raffle.raffleItems[userStake.raffleItemIndex].stakeTotal;
             RafflePrize[] storage rafflePrizes = raffle.raffleItems[userStake.raffleItemIndex].rafflePrizes;
             for (uint256 j; j < rafflePrizes.length; j++) {
-                address prizeAddress = rafflePrizes[j].prizeAddress;
-                if (prizeAddress != _won[stakesWon].prizeAddress) {
+                RafflePrize storage rafflePrize = rafflePrizes[j];
+                if (rafflePrize.prizeAddress != _won[stakesWon].prizeAddress) {
                     continue;
                 }
-                uint256 prizeId = rafflePrizes[j].prizeId;
-                if (prizeId != _won[stakesWon].prizeId) {
+                if (rafflePrize.prizeId != _won[stakesWon].prizeId) {
                     continue;
                 }
-                uint256[] memory prizeValues = _won[stakesWon].prizeValues;
-                uint256[] memory checkDuplicates = new uint256[](_won[stakesWon].prizeValues.length);
+                uint256[] calldata prizeValues = _won[stakesWon].prizeValues;
+                uint256 lastPrizeValue;
                 uint256 totalPrizes = rafflePrizes[j].prizeValue;
                 for (uint256 k; k < prizeValues.length; k++) {
                     uint256 prizeValue = prizeValues[k];
-                    for (uint256 l; l < k; l++) {
-                        require(checkDuplicates[l] != prizeValue, "Raffle: Duplicate prizes given");
-                    }
-                    checkDuplicates[k] = prizeValue;
+                    require(prizeValue > lastPrizeValue || k == 0, "Raffle: Prize value not greater than last prize value");
+                    lastPrizeValue = prizeValue;
                     require(prizeValue < totalPrizes, "Raffle: prizeValue does not exist");
-                    uint256 winningNumber = uint256(keccak256(abi.encodePacked(raffle.randomNumber, prizeAddress, prizeId, prizeValue))) % stakeTotal;
+                    uint256 winningNumber = uint256(
+                        keccak256(abi.encodePacked(raffle.randomNumber, rafflePrize.prizeAddress, rafflePrize.prizeId, prizeValue))
+                    ) % stakeTotal;
                     require(winningNumber >= userStake.rangeStart && winningNumber < userStake.rangeEnd, "Raffle: Did not win prize");
                 }
-                emit RaffleClaimPrize(_raffleId, msg.sender, prizeAddress, prizeId, prizeValues.length);
-                IERC1155(prizeAddress).safeTransferFrom(address(this), msg.sender, prizeId, prizeValues.length, "");
+                emit RaffleClaimPrize(_raffleId, msg.sender, rafflePrize.prizeAddress, rafflePrize.prizeId, prizeValues.length);
+                IERC1155(rafflePrize.prizeAddress).safeTransferFrom(address(this), msg.sender, rafflePrize.prizeId, prizeValues.length, "");
                 stakesWon++;
             }
         }
