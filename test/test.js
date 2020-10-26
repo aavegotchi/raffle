@@ -200,8 +200,9 @@ describe('Raffle', function () {
     const winners = await raffle['winners(uint256)']('0')
     let totalPrizes = 0
 
+
     winners.forEach((obj) => {
-      totalPrizes = totalPrizes + Number(obj.prizeValue)
+      totalPrizes = totalPrizes + Number(obj.prizeValues.length)
       expect(obj.claimed).to.equal(false)
     })
 
@@ -220,12 +221,27 @@ describe('Raffle', function () {
     await truffleAssert.reverts(raffle.drawRandomNumber('0'), 'Raffle: Random number already generated')
   })
 
+
+  it('🙆‍♂️ Should claim prizes', async function () {
+    let balance = await vouchers.balanceOf(account, '0')
+    expect(balance).to.equal(0)
+
+    let winners = await raffle['winners(uint256)']('0')
+    await raffle['claimPrize(uint256, WinnerIO[] calldata)']('0', winners)
+    winners = await raffle['winners(uint256)']('0')
+    winners.forEach((obj) => {
+      expect(obj.claimed).to.equal(true)
+    })
+
+  })
+
+
   it('🙆‍♂️  Should claim prizes', async function () {
     let balance = await vouchers.balanceOf(account, '0')
     expect(balance).to.equal(0)
-    await raffle.claimPrize('0')
-    await bobRaffle.claimPrize('0')
-    await caasperRaffle.claimPrize('0')
+    await raffle['claimPrize(uint256)']('0')
+    await bobRaffle['claimPrize(uint256)']('0')
+    await caasperRaffle['claimPrize(uint256)']('0')
     const winners = await raffle['winners(uint256)']('0')
     winners.forEach((obj) => {
       expect(obj.claimed).to.equal(true)
@@ -243,7 +259,7 @@ describe('Raffle', function () {
   })
 
   it('🙅‍♀️  Cannot claim again', async function () {
-    await truffleAssert.reverts(raffle.claimPrize('0'), 'Raffle: Any prizes for account have already been claimed')
+    await truffleAssert.reverts(raffle['claimPrize(uint256)']('0'), 'Raffle: Any prizes for account have already been claimed')
   })
 
   it('🙅‍♀️  Should not have any open raffles', async function () {
