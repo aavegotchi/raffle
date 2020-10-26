@@ -2,7 +2,7 @@
 
 const { deployContracts } = require('./deploy.js')
 
-async function main () {
+async function main() {
   const accounts = await ethers.getSigners()
   const account = await accounts[0].getAddress()
   let stakeAddress
@@ -11,9 +11,9 @@ async function main () {
   let vouchersContract
   let rafflesContract
   if (hre.network.name === 'kovan') {
-    // ;[prizeAddress, rafflesAddress] = await deployContracts()
-    rafflesAddress = '0xc7812BFC945855Bd040982a66bDc3684e7CaFaD0'
-    prizeAddress = '0xddE4bc55fe26796B7fDa196afD132e2ca4A001ac'
+    //;[prizeAddress, rafflesAddress] = await deployContracts()
+    rafflesAddress = '0x1e9Aa7d76A69271660fB43199ad69B2e65d48A63'
+    prizeAddress = '0x003aA7990A99d50364F7560076Ea5Bb3Ffe95612'
     stakeAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
     vouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
@@ -69,11 +69,16 @@ async function main () {
 
   // First raffle, 3 days
   // await vouchersContract.createVoucherTypes(account, prizeValues, '0x')
-  console.log(prizeValues)
+  // console.log(prizeValues)
+
+  const supplies = await vouchersContract.totalSupplies()
+  console.log('supplies:', supplies)
+
+
   const ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
   await vouchersContract.mintVouchers(account, ids, prizeValues, '0x')
   console.log('Created voucher types and minted vouchers')
-  // await vouchersContract.setApprovalForAll(rafflesContract.address, true)
+  await vouchersContract.setApprovalForAll(rafflesContract.address, true)
   // console.log('Approved raffleContract to transfer vouchers')
   const now = new Date()
   const secondsSinceEpoch = Math.round(now.getTime() / 1000)
