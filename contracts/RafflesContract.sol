@@ -202,6 +202,16 @@ contract RafflesContract {
         return keccak256(abi.encodePacked(_keyHash, _vRFInputSeed));
     }
 
+    function drawRandomNumber(uint256 _raffleId) external {
+        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
+        Raffle storage raffle = s.raffles[_raffleId];
+        require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
+        require(raffle.randomNumber == 0, "Raffle: Random number already generated");
+        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.number)));
+        raffle.randomNumber = randomNumber;
+        emit RaffleRandomNumber(_raffleId, randomNumber);
+    }
+
     function drawRandomNumber(uint256 _raffleId, uint256 _userProvidedSeed) external {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
