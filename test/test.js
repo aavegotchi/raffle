@@ -25,8 +25,16 @@ describe('Raffle', function () {
     console.log('Account: ' + account)
     console.log('---')
 
+
+    //Kovan VRF Coordinator: 0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9
+    //Kovan LINK : 0xa36085F69e2889c224210F603D836748e7dC0088
+    //Kovan Key Hash: 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4
+
+    const vrfCoordinator = "0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9"
+    const link = "0xa36085F69e2889c224210F603D836748e7dC0088"
+
     const RaffleContract = await ethers.getContractFactory('RafflesContract')
-    raffle = await RaffleContract.deploy(account)
+    raffle = await RaffleContract.deploy(account, vrfCoordinator, link)
     await raffle.deployed()
     raffleAddress = raffle.address
 
@@ -189,12 +197,12 @@ describe('Raffle', function () {
   })
 
   it('🙆‍♂️  Should not draw a number before raffle ends', async function () {
-    await truffleAssert.reverts(raffle.drawRandomNumber('0'), 'Raffle: Raffle time has not expired')
+    await truffleAssert.reverts(raffle['drawRandomNumber(uint256)']('0'), 'Raffle: Raffle time has not expired')
   })
 
   it('🙆‍♂️  Should draw random number for each prize', async function () {
     ethers.provider.send('evm_increaseTime', [86401]) // add 60 seconds
-    await raffle.drawRandomNumber('0')
+    await raffle['drawRandomNumber(uint256)']('0')
 
     const raffleInfo = await raffle.raffleInfo('0')
     const winners = await raffle['winners(uint256)']('0')
@@ -217,7 +225,7 @@ describe('Raffle', function () {
   })
 
   it('🙅‍♀️  Cannot claim another random number', async function () {
-    await truffleAssert.reverts(raffle.drawRandomNumber('0'), 'Raffle: Random number already generated')
+    await truffleAssert.reverts(raffle['drawRandomNumber(uint256)']('0'), 'Raffle: Random number already generated')
   })
 
   it('🙆‍♂️ Should claim prizes', async function () {

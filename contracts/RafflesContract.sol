@@ -116,7 +116,7 @@ contract RafflesContract {
         s.contractOwner = _contractOwner;
         im_vrfCoordinator = _vrfCoordinator;
         im_LINK = LinkTokenInterface(_link);
-        s.keyHash = 0x0218141742245eeeba0660e61ef8767e6ce8e7215289a4d18616828caf4dfe33; // Ropsten details
+        s.keyHash = 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4; // Ropsten details
         s.fee = 10**18;
     }
 
