@@ -1,6 +1,6 @@
 /* global ethers */
 
-async function main () {
+async function main(vrfCoordinator, linkAddress) {
   const accounts = await ethers.getSigners()
   const account = await accounts[0].getAddress()
 
@@ -10,7 +10,7 @@ async function main () {
   console.log('Deployed VouchersContract:' + vouchersContract.address)
 
   const RafflesContract = await ethers.getContractFactory('RafflesContract')
-  const rafflesContract = await RafflesContract.deploy(account)
+  const rafflesContract = await RafflesContract.deploy(account, vrfCoordinator, linkAddress)
   await rafflesContract.deployed()
   console.log()
   console.log('Deployed RaffleContract:' + rafflesContract.address)
@@ -18,7 +18,7 @@ async function main () {
 }
 
 if (require.main === module) {
-  main()
+  main(vrfCoordinator, linkAddress)
     .then(() => process.exit(0))
     .catch(error => {
       console.error(error)
