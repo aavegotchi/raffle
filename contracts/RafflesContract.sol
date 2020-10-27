@@ -5,9 +5,17 @@ pragma experimental ABIEncoderV2;
 // import "hardhat/console.sol";
 
 import "./interfaces/IERC1155.sol";
+import "./chainlink/LinkTokenInterface.sol";
 
 struct AppStorage {
     Raffle[] raffles;
+    // Nonces for each VRF key from which randomness has been requested.
+    // Must stay in sync with VRFCoordinator[_keyHash][this]
+    // keyHash => nonce
+    mapping(bytes32 => uint256) nonces;
+    mapping(bytes32 => uint256) requestIdToRaffleId;
+    bytes32 keyHash;
+    uint256 fee;
     address contractOwner;
 }
 
@@ -89,6 +97,10 @@ struct WinnerIO {
 
 contract RafflesContract {
     AppStorage internal s;
+    // Immutable values are prefixed with im_ to easily identify them in code
+    LinkTokenInterface internal immutable im_LINK;
+    address internal immutable im_vrfCoordinator;
+
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event RaffleStarted(uint256 indexed raffleId, uint256 raffleEnd, RaffleItemIO[] raffleItems);
@@ -96,9 +108,133 @@ contract RafflesContract {
     event RaffleRandomNumber(uint256 indexed raffleId, uint256 randomNumber);
     event RaffleClaimPrize(uint256 indexed raffleId, address staker, address prizeAddress, uint256 prizeId, uint256 prizeValue);
 
-    constructor(address _contractOwner) {
+    constructor(
+        address _contractOwner,
+        address _vrfCoordinator,
+        address _link
+    ) {
         s.contractOwner = _contractOwner;
+        im_vrfCoordinator = _vrfCoordinator;
+        im_LINK = LinkTokenInterface(_link);
+        s.keyHash = 0x0218141742245eeeba0660e61ef8767e6ce8e7215289a4d18616828caf4dfe33; // Ropsten details
+        s.fee = 10**18;
     }
+
+    // VRF Functionality ////////////////////////////////////////////////////////////////
+    function nonces(bytes32 _keyHash) external view returns (uint256 nonce_) {
+        nonce_ = s.nonces[_keyHash];
+    }
+
+    /**
+     * @notice requestRandomness initiates a request for VRF output given _seed
+     *
+     * @dev See "SECURITY CONSIDERATIONS" above for more information on _seed.
+     *
+     * @dev The fulfillRandomness method receives the output, once it's provided
+     * @dev by the Oracle, and verified by the vrfCoordinator.
+     *
+     * @dev The _keyHash must already be registered with the VRFCoordinator, and
+     * @dev the _fee must exceed the fee specified during registration of the
+     * @dev _keyHash.
+     *
+     * @param _keyHash ID of public key against which randomness is generated
+     * @param _fee The amount of LINK to send with the request
+     * @param _seed seed mixed into the input of the VRF
+     *
+     * @return requestId unique ID for this request
+     *
+     * @dev The returned requestId can be used to distinguish responses to *
+     * @dev concurrent requests. It is passed as the first argument to
+     * @dev fulfillRandomness.
+     */
+    function requestRandomness(
+        bytes32 _keyHash,
+        uint256 _fee,
+        uint256 _seed
+    ) public returns (bytes32 requestId) {
+        im_LINK.transferAndCall(im_vrfCoordinator, _fee, abi.encode(_keyHash, _seed));
+        // This is the seed passed to VRFCoordinator. The oracle will mix this with
+        // the hash of the block containing this request to obtain the seed/input
+        // which is finally passed to the VRF cryptographic machinery.
+        uint256 vRFSeed = makeVRFInputSeed(_keyHash, _seed, address(this), s.nonces[_keyHash]);
+        // nonces[_keyHash] must stay in sync with
+        // VRFCoordinator.nonces[_keyHash][this], which was incremented by the above
+        // successful LINK.transferAndCall (in VRFCoordinator.randomnessRequest).
+        // This provides protection against the user repeating their input
+        // seed, which would result in a predictable/duplicate output.
+        s.nonces[_keyHash]++;
+        return makeRequestId(_keyHash, vRFSeed);
+    }
+
+    /**
+     * @notice returns the seed which is actually input to the VRF coordinator
+     *
+     * @dev To prevent repetition of VRF output due to repetition of the
+     * @dev user-supplied seed, that seed is combined in a hash with the
+     * @dev user-specific nonce, and the address of the consuming contract. The
+     * @dev risk of repetition is mostly mitigated by inclusion of a blockhash in
+     * @dev the final seed, but the nonce does protect against repetition in
+     * @dev requests which are included in a single block.
+     *
+     * @param _userSeed VRF seed input provided by user
+     * @param _requester Address of the requesting contract
+     * @param _nonce User-specific nonce at the time of the request
+     */
+    function makeVRFInputSeed(
+        bytes32 _keyHash,
+        uint256 _userSeed,
+        address _requester,
+        uint256 _nonce
+    ) internal pure returns (uint256) {
+        return uint256(keccak256(abi.encode(_keyHash, _userSeed, _requester, _nonce)));
+    }
+
+    /**
+     * @notice Returns the id for this request
+     * @param _keyHash The serviceAgreement ID to be used for this request
+     * @param _vRFInputSeed The seed to be passed directly to the VRF
+     * @return The id for this request
+     *
+     * @dev Note that _vRFInputSeed is not the seed passed by the consuming
+     * @dev contract, but the one generated by makeVRFInputSeed
+     */
+    function makeRequestId(bytes32 _keyHash, uint256 _vRFInputSeed) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_keyHash, _vRFInputSeed));
+    }
+
+    function drawRandomNumber(uint256 _raffleId, uint256 _userProvidedSeed) external {
+        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
+        Raffle storage raffle = s.raffles[_raffleId];
+        require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
+        require(raffle.randomNumber == 0, "Raffle: Random number already generated");
+        // Use Chainlink VRF to generate random number
+        require(im_LINK.balanceOf(address(this)) > s.fee, "Not enough LINK - fill contract with faucet");
+        uint256 seed = uint256(keccak256(abi.encode(_userProvidedSeed, blockhash(block.number)))); // Hash user seed and blockhash
+        bytes32 requestId = requestRandomness(s.keyHash, s.fee, seed);
+        s.requestIdToRaffleId[requestId] = _raffleId;
+        /*
+        uint256 randomNumber = uint224(uint256(keccak256(abi.encodePacked(block.number))));
+        emit RaffleRandomNumber(_raffleId, randomNumber);
+        raffle.randomNumber = randomNumber;
+        */
+    }
+
+    // rawFulfillRandomness is called by VRFCoordinator when it receives a valid VRFproof.
+    /**
+     * @notice Callback function used by VRF Coordinator
+     * @dev Important! Add a modifier to only allow this function to be called by the VRFCoordinator
+     * @dev This is where you do something with randomness!
+     * @dev The VRF Coordinator will only send this function verified responses.
+     * @dev The VRF Coordinator will not pass randomness that could not be verified.
+     */
+    function rawFulfillRandomness(bytes32 requestId, uint256 randomness) external {
+        require(msg.sender == im_vrfCoordinator, "Only VRFCoordinator can fulfill");
+        uint256 raffleId = s.requestIdToRaffleId[requestId];
+        s.raffles[raffleId].randomNumber = randomness;
+        emit RaffleRandomNumber(raffleId, randomness);
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////
 
     function owner() external view returns (address) {
         return s.contractOwner;
@@ -301,16 +437,6 @@ contract RafflesContract {
                 abi.encode(_raffleId)
             );
         }
-    }
-
-    function drawRandomNumber(uint256 _raffleId) external {
-        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
-        Raffle storage raffle = s.raffles[_raffleId];
-        require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
-        require(raffle.randomNumber == 0, "Raffle: Random number already generated");
-        uint256 randomNumber = uint224(uint256(keccak256(abi.encodePacked(block.number))));
-        emit RaffleRandomNumber(_raffleId, randomNumber);
-        raffle.randomNumber = randomNumber;
     }
 
     function winners(uint256 _raffleId) external view returns (WinnerIO[] memory winners_) {
