@@ -13,6 +13,8 @@ describe('Raffle', function () {
   let raffleAddress
   let vouchers
   let voucherAddress
+  let bobRaffle
+  let casperRaffle
 
   before(async function () {
     const accounts = await ethers.getSigners()
@@ -25,16 +27,16 @@ describe('Raffle', function () {
     console.log('Account: ' + account)
     console.log('---')
 
+    // Kovan VRF Coordinator: 0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9
+    // Kovan LINK : 0xa36085F69e2889c224210F603D836748e7dC0088
+    // Kovan Key Hash: 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4
 
-    //Kovan VRF Coordinator: 0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9
-    //Kovan LINK : 0xa36085F69e2889c224210F603D836748e7dC0088
-    //Kovan Key Hash: 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4
-
-    const vrfCoordinator = "0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9"
-    const link = "0xa36085F69e2889c224210F603D836748e7dC0088"
+    const vrfCoordinator = '0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9'
+    const link = '0xa36085F69e2889c224210F603D836748e7dC0088'
+    const keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
 
     const RaffleContract = await ethers.getContractFactory('RafflesContract')
-    raffle = await RaffleContract.deploy(account, vrfCoordinator, link)
+    raffle = await RaffleContract.deploy(account, vrfCoordinator, link, keyHash)
     await raffle.deployed()
     raffleAddress = raffle.address
 
@@ -46,7 +48,7 @@ describe('Raffle', function () {
     await vouchers.createVoucherTypes(account, ['10', '10', '10', '10', '10', '10'], [])
 
     bobRaffle = raffle.connect(bob)
-    caasperRaffle = raffle.connect(caasper)
+    casperRaffle = raffle.connect(caasper)
   })
 
   it('🙆‍♂️  Owner Should have 10 of each ticket', async function () {
@@ -171,7 +173,7 @@ describe('Raffle', function () {
 
     await raffle.stake('0', stakeItems)
     await bobRaffle.stake('0', bobItems)
-    await caasperRaffle.stake('0', caasperItems)
+    await casperRaffle.stake('0', caasperItems)
 
     const stakerStats = await raffle.stakeStats('0')
     stakerStats.forEach((stake) => {
@@ -234,14 +236,18 @@ describe('Raffle', function () {
 
     let winners = await raffle['winners(uint256)']('0')
     // console.log(winners)
-    const stakes = []
+    const wins = []
     for (const winner of winners) {
       if (winner.staker === account) {
-        stakes.push(winner)
+        wins.push([
+          winner.userStakeIndex,
+          winner.prizeIndex,
+          winner.prizeValues
+        ])
       }
     }
     // console.log(stakes)
-    await raffle['claimPrize(uint256,(address,bool,address,uint256,uint256[])[])']('0', stakes)
+    await raffle['claimPrize(uint256,(uint256,uint256,uint256[])[])']('0', wins)
     winners = await raffle['winners(uint256)']('0')
     winners.forEach((obj) => {
       if (obj.staker === account) {
@@ -255,7 +261,7 @@ describe('Raffle', function () {
     expect(balance).to.equal(1)
     // await raffle['claimPrize(uint256)']('0')
     await bobRaffle['claimPrize(uint256)']('0')
-    await caasperRaffle['claimPrize(uint256)']('0')
+    await casperRaffle['claimPrize(uint256)']('0')
     const winners = await raffle['winners(uint256)']('0')
     winners.forEach((obj) => {
       expect(obj.claimed).to.equal(true)
