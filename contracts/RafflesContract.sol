@@ -63,7 +63,7 @@ struct RaffleItemIO {
     RafflePrizeIO[] rafflePrizes;
 }
 
-struct OpenRaffleIO {
+struct RaffleIO {
     uint256 raffleId;
     uint256 raffleEnd;
 }
@@ -90,8 +90,7 @@ struct StakeItemIO {
 struct WinnerIO {
     address staker;
     bool claimed;
-    address prizeAddress;
-    uint256 prizeId;
+    uint256 prizeIndex;
     uint256[] prizeValues;
 }
 
@@ -100,6 +99,7 @@ contract RafflesContract {
     // Immutable values are prefixed with im_ to easily identify them in code
     LinkTokenInterface internal immutable im_LINK;
     address internal immutable im_vrfCoordinator;
+    bytes32 internal immutable im_keyHash;
 
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -111,12 +111,13 @@ contract RafflesContract {
     constructor(
         address _contractOwner,
         address _vrfCoordinator,
-        address _link
+        address _link,
+        bytes32 _keyHash
     ) {
         s.contractOwner = _contractOwner;
         im_vrfCoordinator = _vrfCoordinator;
         im_LINK = LinkTokenInterface(_link);
-        s.keyHash = 0x0218141742245eeeba0660e61ef8767e6ce8e7215289a4d18616828caf4dfe33; // Ropsten details
+        im_keyHash = _keyHash;
         s.fee = 10**18;
     }
 
@@ -222,11 +223,6 @@ contract RafflesContract {
         uint256 seed = uint256(keccak256(abi.encode(_userProvidedSeed, blockhash(block.number)))); // Hash user seed and blockhash
         bytes32 requestId = requestRandomness(s.keyHash, s.fee, seed);
         s.requestIdToRaffleId[requestId] = _raffleId;
-        /*
-        uint256 randomNumber = uint224(uint256(keccak256(abi.encodePacked(block.number))));
-        emit RaffleRandomNumber(_raffleId, randomNumber);
-        raffle.randomNumber = randomNumber;
-        */
     }
 
     // rawFulfillRandomness is called by VRFCoordinator when it receives a valid VRFproof.
@@ -323,8 +319,8 @@ contract RafflesContract {
         return ERC1155_ACCEPTED;
     }
 
-    function openRaffles() external view returns (OpenRaffleIO[] memory openRaffles_) {
-        openRaffles_ = new OpenRaffleIO[](s.raffles.length);
+    function openRaffles() external view returns (RaffleIO[] memory openRaffles_) {
+        openRaffles_ = new RaffleIO[](s.raffles.length);
         uint256 numOpen;
         for (uint256 i; i < s.raffles.length; i++) {
             uint256 raffleEnd = s.raffles[i].raffleEnd;
@@ -339,8 +335,8 @@ contract RafflesContract {
         }
     }
 
-    function getRaffles() external view returns (OpenRaffleIO[] memory raffles_) {
-        raffles_ = new OpenRaffleIO[](s.raffles.length);
+    function getRaffles() external view returns (RaffleIO[] memory raffles_) {
+        raffles_ = new RaffleIO[](s.raffles.length);
         for (uint256 i; i < s.raffles.length; i++) {
             raffles_[i].raffleId = i;
             raffles_[i].raffleEnd = s.raffles[i].raffleEnd;
@@ -493,7 +489,7 @@ contract RafflesContract {
                         assembly {
                             mstore(prizeValues, winnings)
                         }
-                        winners_[winnersNum] = WinnerIO(staker, raffle.prizeClaimed[msg.sender], prizeAddress, prizeId, prizeValues);
+                        winners_[winnersNum] = WinnerIO(staker, raffle.prizeClaimed[msg.sender], j, prizeValues);
                         winnersNum++;
                     }
                 }
@@ -504,18 +500,6 @@ contract RafflesContract {
         }
     }
 
-    /*
-    function combineStakerWinnings(WinnerIO[] memory _winners) internal pure returns (WinnerIO[] memory winners_) {
-        winners_ = new WinnerIO[](_winners.length);
-        uint256 numWinners;
-        for(uint256 i; i > _winners.length; i++) {
-            bool found = false;
-            for(uint256 j; j < numWinners; j++) {
-                if(_winners.staker === )
-            }
-        }
-    }
-*/
     function claimPrize(uint256 _raffleId, WinnerIO[] calldata _won) external {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
@@ -527,31 +511,25 @@ contract RafflesContract {
             UserStake storage userStake = raffle.userStakes[msg.sender][i];
             uint256 stakeTotal = raffle.raffleItems[userStake.raffleItemIndex].stakeTotal;
             RafflePrize[] storage rafflePrizes = raffle.raffleItems[userStake.raffleItemIndex].rafflePrizes;
-            for (uint256 j; j < rafflePrizes.length; j++) {
-                RafflePrize storage rafflePrize = rafflePrizes[j];
-                if (rafflePrize.prizeAddress != _won[stakesWon].prizeAddress) {
-                    continue;
-                }
-                if (rafflePrize.prizeId != _won[stakesWon].prizeId) {
-                    continue;
-                }
-                uint256[] calldata prizeValues = _won[stakesWon].prizeValues;
-                uint256 lastPrizeValue;
-                uint256 totalPrizes = rafflePrizes[j].prizeValue;
-                for (uint256 k; k < prizeValues.length; k++) {
-                    uint256 prizeValue = prizeValues[k];
-                    require(prizeValue > lastPrizeValue || k == 0, "Raffle: Prize value not greater than last prize value");
-                    lastPrizeValue = prizeValue;
-                    require(prizeValue < totalPrizes, "Raffle: prizeValue does not exist");
-                    uint256 winningNumber = uint256(
-                        keccak256(abi.encodePacked(raffle.randomNumber, rafflePrize.prizeAddress, rafflePrize.prizeId, prizeValue))
-                    ) % stakeTotal;
-                    require(winningNumber >= userStake.rangeStart && winningNumber < userStake.rangeEnd, "Raffle: Did not win prize");
-                }
-                emit RaffleClaimPrize(_raffleId, msg.sender, rafflePrize.prizeAddress, rafflePrize.prizeId, prizeValues.length);
-                IERC1155(rafflePrize.prizeAddress).safeTransferFrom(address(this), msg.sender, rafflePrize.prizeId, prizeValues.length, "");
-                stakesWon++;
+            uint256 rafflePrizesLength = rafflePrizes.length;
+            require(rafflePrizesLength > _won[stakesWon].prizeIndex, "Raffle: Raffle prize type does not exist");
+            RafflePrize memory rafflePrize = rafflePrizes[_won[stakesWon].prizeIndex];
+            uint256[] calldata prizeValues = _won[stakesWon].prizeValues;
+            uint256 lastPrizeValue;
+            uint256 totalPrizes = rafflePrize.prizeValue;
+            for (uint256 k; k < prizeValues.length; k++) {
+                uint256 prizeValue = prizeValues[k];
+                require(prizeValue > lastPrizeValue || k == 0, "Raffle: Prize value not greater than last prize value");
+                lastPrizeValue = prizeValue;
+                require(prizeValue < totalPrizes, "Raffle: prizeValue does not exist");
+                uint256 winningNumber = uint256(
+                    keccak256(abi.encodePacked(raffle.randomNumber, rafflePrize.prizeAddress, rafflePrize.prizeId, prizeValue))
+                ) % stakeTotal;
+                require(winningNumber >= userStake.rangeStart && winningNumber < userStake.rangeEnd, "Raffle: Did not win prize");
             }
+            emit RaffleClaimPrize(_raffleId, msg.sender, rafflePrize.prizeAddress, rafflePrize.prizeId, prizeValues.length);
+            IERC1155(rafflePrize.prizeAddress).safeTransferFrom(address(this), msg.sender, rafflePrize.prizeId, prizeValues.length, "");
+            stakesWon++;
         }
         require(stakesWon == _won.length, "Raffle: Not all supplied prizes were won");
     }
