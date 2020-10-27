@@ -24,7 +24,7 @@ struct Raffle {
     mapping(address => mapping(uint256 => uint256)) raffleItemIndexes;
     RaffleItem[] raffleItems;
     // raffleItemIndex => RafflePrize[]
-    mapping(uint256 => RafflePrize[]) rafflePrizes;
+    mapping(uint256 => RaffleItemPrize[]) raffleItemPrizes;
     mapping(address => UserStake[]) userStakes;
     mapping(address => bool) prizeClaimed;
     address[] stakers;
@@ -38,13 +38,13 @@ struct UserStake {
     uint112 rangeEnd;
 }
 
-struct RafflePrize {
+struct RaffleItemPrize {
     address prizeAddress;
     uint96 prizeValue;
     uint256 prizeId;
 }
 
-struct RafflePrizeIO {
+struct RaffleItemPrizeIO {
     address prizeAddress;
     uint256 prizeId;
     uint256 prizeValue;
@@ -54,13 +54,13 @@ struct RaffleItem {
     address stakeAddress;
     uint256 stakeId;
     uint256 stakeTotal;
-    RafflePrize[] rafflePrizes;
+    RaffleItemPrize[] raffleItemPrizes;
 }
 
 struct RaffleItemIO {
     address stakeAddress;
     uint256 stakeId;
-    RafflePrizeIO[] rafflePrizes;
+    RaffleItemPrizeIO[] raffleItemPrizes;
 }
 
 struct RaffleIO {
@@ -92,13 +92,13 @@ struct StakeWinnerIO {
     bool claimed;
     uint256 userStakeIndex;
     uint256 raffleItemIndex;
-    uint256 prizeIndex;
+    uint256 raffleItemPrizeIndex;
     uint256[] prizeValues;
 }
 
 struct StakeWinIO {
     uint256 userStakeIndex;
-    uint256 prizeIndex;
+    uint256 raffleItemPrizeIndex;
     uint256[] prizeValues;
 }
 
@@ -271,7 +271,7 @@ contract RafflesContract {
         raffle.raffleEnd = uint256(_raffleEnd);
         for (uint256 i; i < _raffleItems.length; i++) {
             RaffleItemIO calldata raffleItemIO = _raffleItems[i];
-            require(raffleItemIO.rafflePrizes.length > 0, "Raffle: No prizes");
+            require(raffleItemIO.raffleItemPrizes.length > 0, "Raffle: No prizes");
             require(
                 raffle.raffleItemIndexes[raffleItemIO.stakeAddress][raffleItemIO.stakeId] == 0,
                 "Raffle: Raffle item already using stakeAddress and stakeId"
@@ -280,14 +280,16 @@ contract RafflesContract {
             raffle.raffleItemIndexes[raffleItemIO.stakeAddress][raffleItemIO.stakeId] = raffle.raffleItems.length;
             raffleItem.stakeAddress = raffleItemIO.stakeAddress;
             raffleItem.stakeId = raffleItemIO.stakeId;
-            for (uint256 j; j < raffleItemIO.rafflePrizes.length; j++) {
-                RafflePrizeIO memory rafflePrizeIO = raffleItemIO.rafflePrizes[j];
-                raffleItem.rafflePrizes.push(RafflePrize(rafflePrizeIO.prizeAddress, uint96(rafflePrizeIO.prizeValue), rafflePrizeIO.prizeId));
-                IERC1155(rafflePrizeIO.prizeAddress).safeTransferFrom(
+            for (uint256 j; j < raffleItemIO.raffleItemPrizes.length; j++) {
+                RaffleItemPrizeIO memory raffleItemPrizeIO = raffleItemIO.raffleItemPrizes[j];
+                raffleItem.raffleItemPrizes.push(
+                    RaffleItemPrize(raffleItemPrizeIO.prizeAddress, uint96(raffleItemPrizeIO.prizeValue), raffleItemPrizeIO.prizeId)
+                );
+                IERC1155(raffleItemPrizeIO.prizeAddress).safeTransferFrom(
                     msg.sender,
                     address(this),
-                    rafflePrizeIO.prizeId,
-                    rafflePrizeIO.prizeValue,
+                    raffleItemPrizeIO.prizeId,
+                    raffleItemPrizeIO.prizeValue,
                     abi.encode(raffleId)
                 );
             }
@@ -379,12 +381,12 @@ contract RafflesContract {
             RaffleItem storage raffleItem = raffle.raffleItems[i];
             raffleItems_[i].stakeAddress = raffleItem.stakeAddress;
             raffleItems_[i].stakeId = raffleItem.stakeId;
-            raffleItems_[i].rafflePrizes = new RafflePrizeIO[](raffleItem.rafflePrizes.length);
-            for (uint256 j; j < raffleItem.rafflePrizes.length; j++) {
-                RafflePrize storage rafflePrize = raffleItem.rafflePrizes[j];
-                raffleItems_[i].rafflePrizes[j].prizeAddress = rafflePrize.prizeAddress;
-                raffleItems_[i].rafflePrizes[j].prizeId = rafflePrize.prizeId;
-                raffleItems_[i].rafflePrizes[j].prizeValue = rafflePrize.prizeValue;
+            raffleItems_[i].raffleItemPrizes = new RaffleItemPrizeIO[](raffleItem.raffleItemPrizes.length);
+            for (uint256 j; j < raffleItem.raffleItemPrizes.length; j++) {
+                RaffleItemPrize storage raffleItemPrize = raffleItem.raffleItemPrizes[j];
+                raffleItems_[i].raffleItemPrizes[j].prizeAddress = raffleItemPrize.prizeAddress;
+                raffleItems_[i].raffleItemPrizes[j].prizeId = raffleItemPrize.prizeId;
+                raffleItems_[i].raffleItemPrizes[j].prizeValue = raffleItemPrize.prizeValue;
             }
         }
     }
@@ -467,9 +469,9 @@ contract RafflesContract {
         {
             uint256 numRafflePrizes;
             for (uint256 i; i < raffle.raffleItems.length; i++) {
-                RafflePrize[] storage rafflePrizes = raffle.raffleItems[i].rafflePrizes;
-                for (uint256 j; j < rafflePrizes.length; j++) {
-                    numRafflePrizes += rafflePrizes[j].prizeValue;
+                RaffleItemPrize[] storage raffleItemPrizes = raffle.raffleItems[i].raffleItemPrizes;
+                for (uint256 j; j < raffleItemPrizes.length; j++) {
+                    numRafflePrizes += raffleItemPrizes[j].prizeValue;
                 }
             }
             winners_ = new StakeWinnerIO[](numRafflePrizes);
@@ -480,13 +482,13 @@ contract RafflesContract {
             for (uint256 i; i < raffle.userStakes[staker].length; i++) {
                 UserStake storage userStake = raffle.userStakes[staker][i];
                 uint256 stakeTotal = raffle.raffleItems[userStake.raffleItemIndex].stakeTotal;
-                RafflePrize[] storage rafflePrizes = raffle.raffleItems[userStake.raffleItemIndex].rafflePrizes;
-                for (uint256 j; j < rafflePrizes.length; j++) {
+                RaffleItemPrize[] storage raffleItemPrizes = raffle.raffleItems[userStake.raffleItemIndex].raffleItemPrizes;
+                for (uint256 j; j < raffleItemPrizes.length; j++) {
                     uint256 winnings;
-                    address prizeAddress = rafflePrizes[j].prizeAddress;
-                    uint256 prizeId = rafflePrizes[j].prizeId;
-                    uint256[] memory prizeValues = new uint256[](rafflePrizes[j].prizeValue);
-                    for (uint256 k; k < rafflePrizes[j].prizeValue; k++) {
+                    address prizeAddress = raffleItemPrizes[j].prizeAddress;
+                    uint256 prizeId = raffleItemPrizes[j].prizeId;
+                    uint256[] memory prizeValues = new uint256[](raffleItemPrizes[j].prizeValue);
+                    for (uint256 k; k < raffleItemPrizes[j].prizeValue; k++) {
                         uint256 winningNumber = uint256(keccak256(abi.encodePacked(randomNumber, prizeAddress, prizeId, k))) % stakeTotal;
                         if (winningNumber >= userStake.rangeStart && winningNumber < userStake.rangeEnd) {
                             prizeValues[winnings] = k;
@@ -521,54 +523,22 @@ contract RafflesContract {
             require(win.userStakeIndex < userStakesLength, "Raffle: User stake does not exist");
             UserStake memory userStake = userStakes[win.userStakeIndex];
             uint256 stakeTotal = raffle.raffleItems[userStake.raffleItemIndex].stakeTotal;
-            RafflePrize[] storage rafflePrizes = raffle.raffleItems[userStake.raffleItemIndex].rafflePrizes;
-            require(rafflePrizes.length > win.prizeIndex, "Raffle: Raffle prize type does not exist");
-            RafflePrize memory rafflePrize = rafflePrizes[win.prizeIndex];
+            RaffleItemPrize[] storage raffleItemPrizes = raffle.raffleItems[userStake.raffleItemIndex].raffleItemPrizes;
+            require(raffleItemPrizes.length > win.raffleItemPrizeIndex, "Raffle: Raffle prize type does not exist");
+            RaffleItemPrize memory raffleItemPrize = raffleItemPrizes[win.raffleItemPrizeIndex];
             uint256 lastPrizeValue;
             for (uint256 j; j < win.prizeValues.length; j++) {
                 uint256 prizeValue = win.prizeValues[j];
                 require(prizeValue > lastPrizeValue || j == 0, "Raffle: Prize value not greater than last prize value");
                 lastPrizeValue = prizeValue;
-                require(prizeValue < rafflePrize.prizeValue, "Raffle: prizeValue does not exist");
+                require(prizeValue < raffleItemPrize.prizeValue, "Raffle: prizeValue does not exist");
                 uint256 winningNumber = uint256(
-                    keccak256(abi.encodePacked(raffle.randomNumber, rafflePrize.prizeAddress, rafflePrize.prizeId, prizeValue))
+                    keccak256(abi.encodePacked(raffle.randomNumber, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, prizeValue))
                 ) % stakeTotal;
                 require(winningNumber >= userStake.rangeStart && winningNumber < userStake.rangeEnd, "Raffle: Did not win prize");
             }
-            emit RaffleClaimPrize(_raffleId, msg.sender, rafflePrize.prizeAddress, rafflePrize.prizeId, win.prizeValues.length);
-            IERC1155(rafflePrize.prizeAddress).safeTransferFrom(address(this), msg.sender, rafflePrize.prizeId, win.prizeValues.length, "");
-        }
-    }
-
-    function claimPrize(uint256 _raffleId) external {
-        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
-        Raffle storage raffle = s.raffles[_raffleId];
-        uint256 randomNumber = raffle.randomNumber;
-        require(randomNumber > 0, "Raffle: Random number not generated yet");
-        require(raffle.prizeClaimed[msg.sender] == false, "Raffle: Any prizes for account have already been claimed");
-        raffle.prizeClaimed[msg.sender] = true;
-        UserStake[] storage userStakes = raffle.userStakes[msg.sender];
-        for (uint256 i; i < userStakes.length; i++) {
-            uint256 rangeStart = userStakes[i].rangeStart;
-            uint256 rangeEnd = userStakes[i].rangeEnd;
-            uint256 raffleItemIndex = userStakes[i].raffleItemIndex;
-            uint256 stakeTotal = raffle.raffleItems[raffleItemIndex].stakeTotal;
-            RafflePrize[] storage rafflePrizes = raffle.raffleItems[raffleItemIndex].rafflePrizes;
-            for (uint256 j; j < rafflePrizes.length; j++) {
-                uint256 winnings;
-                address prizeAddress = rafflePrizes[j].prizeAddress;
-                uint256 prizeId = rafflePrizes[j].prizeId;
-                for (uint256 k; k < rafflePrizes[j].prizeValue; k++) {
-                    uint256 winningNumber = uint256(keccak256(abi.encodePacked(randomNumber, prizeAddress, prizeId, k))) % stakeTotal;
-                    if (winningNumber >= rangeStart && winningNumber < rangeEnd) {
-                        winnings++;
-                    }
-                }
-                if (winnings > 0) {
-                    emit RaffleClaimPrize(_raffleId, msg.sender, prizeAddress, prizeId, winnings);
-                    IERC1155(prizeAddress).safeTransferFrom(address(this), msg.sender, prizeId, winnings, "");
-                }
-            }
+            emit RaffleClaimPrize(_raffleId, msg.sender, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, win.prizeValues.length);
+            IERC1155(raffleItemPrize.prizeAddress).safeTransferFrom(address(this), msg.sender, raffleItemPrize.prizeId, win.prizeValues.length, "");
         }
     }
 }
