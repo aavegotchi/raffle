@@ -2,7 +2,7 @@
 
 const { deployContracts } = require('./deploy.js')
 
-async function main() {
+async function main () {
   const accounts = await ethers.getSigners()
   const account = await accounts[0].getAddress()
   let stakeAddress
@@ -12,30 +12,29 @@ async function main() {
   let rafflesContract
   let vrfCoordinator
   let linkAddress
+  let keyHash
   if (hre.network.name === 'kovan') {
+    vrfCoordinator = '0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9'
+    linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088'
+    keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
 
-
-    vrfCoordinator = "0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9"
-    linkAddress = "0xa36085F69e2889c224210F603D836748e7dC0088"
-
-      ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress)
+    ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash)
     //  rafflesAddress = '0x1e9Aa7d76A69271660fB43199ad69B2e65d48A63'
     // prizeAddress = '0x003aA7990A99d50364F7560076Ea5Bb3Ffe95612'
 
-
-    //Kovan VRF Coordinator: 0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9
-    //Kovan LINK : 0xa36085F69e2889c224210F603D836748e7dC0088
-    //Kovan Key Hash: 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4
+    // Kovan VRF Coordinator: 0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9
+    // Kovan LINK : 0xa36085F69e2889c224210F603D836748e7dC0088
+    // Kovan Key Hash: 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4
 
     stakeAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
     vouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
   } else if (hre.network.name === 'hardhat') {
+    vrfCoordinator = '0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9'
+    linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088'
+    keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
 
-    vrfCoordinator = "0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9"
-    linkAddress = "0xa36085F69e2889c224210F603D836748e7dC0088"
-
-      ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress)
+    ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash)
 
     stakeAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
     vouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
@@ -72,7 +71,7 @@ async function main() {
     raffleItems.push({
       stakeAddress: stakeAddress,
       stakeId: stakeId,
-      rafflePrizes: prizeItems
+      raffleItemPrizes: prizeItems
     })
     for (let j = 0; j < jLength; j++) {
       prizeValues.push(prizeValue)
@@ -84,30 +83,35 @@ async function main() {
       prizeId++
     }
   }
+  let tx
 
   // First raffle, 3 days
-  await vouchersContract.createVoucherTypes(account, prizeValues, '0x')
+  tx = await vouchersContract.createVoucherTypes(account, prizeValues, '0x')
+  await tx.wait()
   // console.log(prizeValues)
 
-  const supplies = await vouchersContract.totalSupplies()
-  console.log('supplies:', supplies)
-
+  // const supplies = await vouchersContract.totalSupplies()
+  // console.log('supplies:', supplies)
 
   // const ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
   // await vouchersContract.mintVouchers(account, ids, prizeValues, '0x')
   console.log('Created voucher types and minted vouchers')
-  await vouchersContract.setApprovalForAll(rafflesContract.address, true)
+  tx = await vouchersContract.setApprovalForAll(rafflesContract.address, true)
+  await tx.wait()
   // console.log('Approved raffleContract to transfer vouchers')
   const now = new Date()
   const secondsSinceEpoch = Math.round(now.getTime() / 1000)
   // const aWeek = 604800 * 2// 604800 == 1 week
-  const threeDays = 3600
-  console.log(JSON.stringify(raffleItems, null, 2))
+  // const threeDays = 3600
+  // 86400 = 1 day
+  const threeDays = 86400 * 3
+  // console.log(JSON.stringify(raffleItems, null, 2))
   console.log('Execute startRaffle function')
-  await rafflesContract.startRaffle(secondsSinceEpoch + threeDays, raffleItems)
+  tx = await rafflesContract.startRaffle(secondsSinceEpoch + threeDays, raffleItems)
+  await tx.wait()
   console.log('Started raffle')
-  console.log('Here are the raffle items:')
-  console.log(JSON.stringify(raffleItems, null, 2))
+  // console.log('Here are the raffle items:')
+  // console.log(JSON.stringify(raffleItems, null, 2))
 }
 
 // We recommend this pattern to be able to use async/await everywhere
