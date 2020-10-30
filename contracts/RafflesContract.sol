@@ -94,6 +94,7 @@ struct StakeWinnerIO {
     uint256 raffleItemIndex;
     uint256 raffleItemPrizeIndex;
     uint256[] prizeValues;
+    uint256 prizeIndex;
 }
 
 struct StakeWinIO {
@@ -499,7 +500,7 @@ contract RafflesContract {
                         assembly {
                             mstore(prizeValues, winnings)
                         }
-                        winners_[winnersNum] = StakeWinnerIO(staker, raffle.prizeClaimed[msg.sender], i, userStake.raffleItemIndex, j, prizeValues);
+                        winners_[winnersNum] = StakeWinnerIO(staker, raffle.prizeClaimed[msg.sender], i, userStake.raffleItemIndex, j, prizeValues, prizeId);
                         winnersNum++;
                     }
                 }
