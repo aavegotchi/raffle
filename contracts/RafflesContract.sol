@@ -181,7 +181,7 @@ contract RafflesContract {
         emit RaffleRandomNumber(_raffleId, randomNumber);
     }
 */
-    function drawRandomNumber(uint256 _raffleId, uint256 _seed) external {
+    function drawRandomNumber(uint256 _raffleId) external {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
@@ -189,7 +189,7 @@ contract RafflesContract {
         // Use Chainlink VRF to generate random number
         require(im_LINK.balanceOf(address(this)) > s.fee, "Not enough LINK");
         // uint256 seed = 0; // uint256(keccak256(abi.encode(_userProvidedSeed, blockhash(block.number)))); // Hash user seed and blockhash
-        bytes32 requestId = requestRandomness(im_keyHash, s.fee, _seed);
+        bytes32 requestId = requestRandomness(im_keyHash, s.fee, block.timestamp);
         s.requestIdToRaffleId[requestId] = _raffleId;
     }
 

@@ -226,13 +226,12 @@ describe('Raffle', function () {
   })
 
   it('🙆‍♂️  Should not draw a number before raffle ends', async function () {
-    await truffleAssert.reverts(raffle.drawRandomNumber('0', 10), 'Raffle: Raffle time has not expired')
+    await truffleAssert.reverts(raffle.drawRandomNumber('0'), 'Raffle: Raffle time has not expired')
   })
 
   it('🙆‍♂️  Should draw random number for each prize', async function () {
     ethers.provider.send('evm_increaseTime', [86401]) // add 60 seconds
-    const seed = new Date().getMilliseconds()
-    await raffle.drawRandomNumber('0', seed)
+    await raffle.drawRandomNumber('0')
     const requestId = await linkContract.getRequestId()
     const randomness = new Date().getMilliseconds()
     await raffle.rawFulfillRandomness(requestId, randomness)
@@ -258,7 +257,7 @@ describe('Raffle', function () {
   })
 
   it('🙅‍♀️  Cannot claim another random number', async function () {
-    await truffleAssert.reverts(raffle.drawRandomNumber('0', 25), 'Raffle: Random number already generated')
+    await truffleAssert.reverts(raffle.drawRandomNumber('0'), 'Raffle: Random number already generated')
   })
 
   it('🙆‍♂️  Should claim prizes', async function () {
@@ -304,7 +303,6 @@ describe('Raffle', function () {
     expect(raffles.length).to.equal(1)
     expect(raffles[0].isOpen).to.equal(false)
   })
-
 
   it('🙆‍♂️  Should start second raffle', async function () {
     await vouchers.createVoucherTypes(account, ['10', '10', '10'], [])
