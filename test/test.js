@@ -129,8 +129,9 @@ describe('Raffle', function () {
     expect(info.raffleItems_.length).to.equal(3)
 
     // Test openRaffles function
-    const openRaffles = await raffle.openRaffles()
-    expect(openRaffles.length).to.equal(1)
+    const raffles = await raffle.getRaffles()
+    expect(raffles.length).to.equal(1)
+    expect(raffles[0].isOpen).to.equal(true)
   })
 
   it('🙅‍♀️  Cannot stake more tickets than they own', async function () {
@@ -299,13 +300,11 @@ describe('Raffle', function () {
   })
 
   it('🙅‍♀️  Should not have any open raffles', async function () {
-    const openRaffles = await raffle.openRaffles()
-    expect(openRaffles.length).to.equal(0)
-  })
-  it('🙆‍♂️  Should view closed raffle', async function () {
     const raffles = await raffle.getRaffles()
     expect(raffles.length).to.equal(1)
+    expect(raffles[0].isOpen).to.equal(false)
   })
+
 
   it('🙆‍♂️  Should start second raffle', async function () {
     await vouchers.createVoucherTypes(account, ['10', '10', '10'], [])
@@ -327,7 +326,9 @@ describe('Raffle', function () {
     expect(info.raffleItems_.length).to.equal(3)
 
     // Test openRaffles function
-    const openRaffles = await raffle.openRaffles()
-    expect(openRaffles.length).to.equal(1)
+    const raffles = await raffle.getRaffles()
+    expect(raffles.length).to.equal(2)
+    expect(raffles[1].isOpen).to.equal(true)
+    expect(raffles[0].isOpen).to.equal(false)
   })
 })

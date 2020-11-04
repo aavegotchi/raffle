@@ -297,7 +297,7 @@ contract RafflesContract {
         _from; // silence not used warning
         _id; // silence not used warning
         _value; // silence not used warning
-        require(_data.length == 32, "Raffle: Incorrect data sent on transfer");
+        require(_data.length == 32, "Raffle: Data of the wrong size sent on transfer");
         uint256 raffleId = abi.decode(_data, (uint256));
         require(raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[raffleId];
@@ -309,29 +309,16 @@ contract RafflesContract {
     struct RaffleIO {
         uint256 raffleId;
         uint256 raffleEnd;
-    }
-
-    function openRaffles() external view returns (RaffleIO[] memory openRaffles_) {
-        openRaffles_ = new RaffleIO[](s.raffles.length);
-        uint256 numOpen;
-        for (uint256 i; i < s.raffles.length; i++) {
-            uint256 raffleEnd = s.raffles[i].raffleEnd;
-            if (raffleEnd > block.timestamp) {
-                openRaffles_[numOpen].raffleId = i;
-                openRaffles_[numOpen].raffleEnd = raffleEnd;
-                numOpen++;
-            }
-        }
-        assembly {
-            mstore(openRaffles_, numOpen)
-        }
+        bool isOpen;
     }
 
     function getRaffles() external view returns (RaffleIO[] memory raffles_) {
         raffles_ = new RaffleIO[](s.raffles.length);
         for (uint256 i; i < s.raffles.length; i++) {
+            uint256 raffleEnd = s.raffles[i].raffleEnd;
             raffles_[i].raffleId = i;
-            raffles_[i].raffleEnd = s.raffles[i].raffleEnd;
+            raffles_[i].raffleEnd = raffleEnd;
+            raffles_[i].isOpen = raffleEnd > block.timestamp;
         }
     }
 
@@ -408,11 +395,11 @@ contract RafflesContract {
             stakerStats_[i].stakeAddress = raffleItem.stakeAddress;
             stakerStats_[i].stakeId = raffleItem.stakeId;
             stakerStats_[i].stakeTotal = raffleItem.stakeTotal;
-            uint256 raffleItemIndex = raffle.raffleItemIndexes[stakerStats_[i].stakeAddress][stakerStats_[i].stakeId] - 1;
+            // count the number of users that have staked for the raffle item
             for (uint256 j; j < raffle.stakers.length; j++) {
                 address staker = raffle.stakers[j];
                 for (uint256 k; k < raffle.userStakes[staker].length; k++) {
-                    if (raffleItemIndex == raffle.userStakes[staker][k].raffleItemIndex) {
+                    if (i == raffle.userStakes[staker][k].raffleItemIndex) {
                         stakerStats_[i].numberOfStakers++;
                         break;
                     }
