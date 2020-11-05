@@ -5,13 +5,20 @@ const truffleAssert = require('truffle-assertions')
 
 function getWins (stakerAddress, winners) {
   const wins = []
+  let lastValue = -1
+  let prizeWin
   for (const winner of winners) {
     if (winner.staker === stakerAddress) {
-      wins.push([
-        winner.userStakeIndex,
-        winner.raffleItemPrizeIndex,
-        winner.prizeValues
-      ])
+      if (winner.userStakeIndex.eq(lastValue)) {
+        prizeWin.push([winner.raffleItemPrizeIndex, winner.prizeValues])
+      } else {
+        prizeWin = [[winner.raffleItemPrizeIndex, winner.prizeValues]]
+        wins.push([
+          winner.userStakeIndex,
+          prizeWin
+        ])
+      }
+      lastValue = winner.userStakeIndex
     }
   }
   return wins
@@ -262,13 +269,13 @@ describe('Raffle', function () {
 
   it('🙆‍♂️  Should claim prizes', async function () {
     let winners = await raffle['winners(uint256)']('0')
-    /*
-    console.log(JSON.stringify(getWins(account, winners), null, 4))
-    console.log('--------')
-    console.log(JSON.stringify(getWins(bobAddress, winners), null, 4))
-    console.log('--------')
-    console.log(JSON.stringify(getWins(casperAddress, winners), null, 4))
-    */
+
+    // console.log(JSON.stringify(getWins(account, winners), null, 4))
+    // console.log('--------')
+    // console.log(JSON.stringify(getWins(bobAddress, winners), null, 4))
+    // console.log('--------')
+    // console.log(JSON.stringify(getWins(casperAddress, winners), null, 4))
+
     await raffle.claimPrize('0', getWins(account, winners))
     await bobRaffle.claimPrize('0', getWins(bobAddress, winners))
     await casperRaffle.claimPrize('0', getWins(casperAddress, winners))
