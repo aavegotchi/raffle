@@ -576,57 +576,6 @@ contract RafflesContract {
         }
     }
 
-    // /* This struct information can be gotten from the return results of the winners function */
-    // struct StakeWinIO {
-    //     uint256 userStakeIndex; // index into a user's array of stakes (which staking attempt won)
-    //     uint256 raffleItemPrizeIndex; // index into the raffleItemPrizes array (which prize was won)
-    //     uint256[] prizeValues; // what prize values won (the length of this array is the number or ERC1155 prize tokens won)
-    // }
-
-    // /**
-    //  * @notice Claim prizes won
-    //  * @dev All items in _wins are verified as actually won by the address that calls this function and reverts otherwise.
-    //  * @dev Each user address can only claim prizes once, so be sure to include all stakes and prizes won.
-    //  * @dev Prizes are transfered to the address that calls this function.
-    //  * @param _raffleId The raffle that prizes were won in.
-    //  * @param _wins Contains only winning stakes and what was won.
-    //  */
-    // function claimPrize(uint256 _raffleId, StakeWinIO[] calldata _wins) external {
-    //     require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
-    //     Raffle storage raffle = s.raffles[_raffleId];
-    //     require(raffle.randomNumber > 0, "Raffle: Random number not generated yet");
-    //     require(raffle.prizeClaimed[msg.sender] == false, "Raffle: Any prizes for account have already been claimed");
-    //     raffle.prizeClaimed[msg.sender] = true;
-    //     // Logic:
-    //     // 1. Loop through wins
-    //     // 2. Verify provided userStakeIndex exists
-    //     // 1. Loop through prize
-    //     UserStake[] storage userStakes = raffle.userStakes[msg.sender];
-    //     uint256 userStakesLength = userStakes.length;
-    //     for (uint256 i; i < _wins.length; i++) {
-    //         StakeWinIO calldata win = _wins[i];
-    //         require(win.userStakeIndex < userStakesLength, "Raffle: User stake does not exist");
-    //         UserStake memory userStake = userStakes[win.userStakeIndex];
-    //         uint256 stakeTotal = raffle.raffleItems[userStake.raffleItemIndex].stakeTotal;
-    //         RaffleItemPrize[] storage raffleItemPrizes = raffle.raffleItems[userStake.raffleItemIndex].raffleItemPrizes;
-    //         require(raffleItemPrizes.length > win.raffleItemPrizeIndex, "Raffle: Raffle prize type does not exist");
-    //         RaffleItemPrize memory raffleItemPrize = raffleItemPrizes[win.raffleItemPrizeIndex];
-    //         uint256 lastPrizeValue;
-    //         for (uint256 j; j < win.prizeValues.length; j++) {
-    //             uint256 prizeValue = win.prizeValues[j];
-    //             require(prizeValue > lastPrizeValue || j == 0, "Raffle: Prize value not greater than last prize value");
-    //             lastPrizeValue = prizeValue;
-    //             require(prizeValue < raffleItemPrize.prizeValue, "Raffle: prizeValue does not exist");
-    //             uint256 winningNumber = uint256(
-    //                 keccak256(abi.encodePacked(raffle.randomNumber, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, prizeValue))
-    //             ) % stakeTotal;
-    //             require(winningNumber >= userStake.rangeStart && winningNumber < userStake.rangeEnd, "Raffle: Did not win prize");
-    //         }
-    //         emit RaffleClaimPrize(_raffleId, msg.sender, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, win.prizeValues.length);
-    //         IERC1155(raffleItemPrize.prizeAddress).safeTransferFrom(address(this), msg.sender, raffleItemPrize.prizeId, win.prizeValues.length, "");
-    //     }
-    // }
-
     /* This struct information can be gotten from the return results of the winners function */
     struct StakeWinIO {
         uint256 userStakeIndex; // index into a user's array of stakes (which staking attempt won)
