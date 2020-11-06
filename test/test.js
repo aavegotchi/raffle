@@ -9,16 +9,18 @@ function getWins (entrantAddress, winners) {
   let prizeWin
   for (const winner of winners) {
     if (winner.entrant === entrantAddress) {
-      if (winner.userEntriesIndex.eq(lastValue)) {
-        prizeWin.push([winner.raffleItemPrizeIndex, winner.winningPrizeNumbers])
+      const winningPrizeNumbers = [...winner.winningPrizeNumbers]
+      winningPrizeNumbers.reverse()
+      if (winner.userEntryIndex.eq(lastValue)) {
+        prizeWin.unshift([winner.raffleItemPrizeIndex, winningPrizeNumbers])
       } else {
-        prizeWin = [[winner.raffleItemPrizeIndex, winner.winningPrizeNumbers]]
-        wins.push([
-          winner.userEntriesIndex,
+        prizeWin = [[winner.raffleItemPrizeIndex, winningPrizeNumbers]]
+        wins.unshift([
+          winner.userEntryIndex,
           prizeWin
         ])
       }
-      lastValue = winner.userEntriesIndex
+      lastValue = winner.userEntryIndex
     }
   }
   return wins
@@ -192,7 +194,9 @@ describe('Raffle', function () {
     const bobItems = [
       // I'm staking twice, but since it's the same account
       [ticketsAddress, 2, 10],
-      [ticketsAddress, 1, 3]
+      [ticketsAddress, 1, 2],
+      [ticketsAddress, 1, 1],
+      [ticketsAddress, 1, 1]
       // [voucherAddress, 2, 1],
     ]
 
@@ -217,7 +221,7 @@ describe('Raffle', function () {
         expect(totalEntered).to.equal(17)
       } else if (Number(ticketStats.ticketId) === 1) {
         expect(numberOfEntrants).to.equal(3)
-        expect(totalEntered).to.equal(18)
+        expect(totalEntered).to.equal(19)
       } else if (Number(ticketStats.ticketId) === 2) {
         expect(numberOfEntrants).to.equal(2)
         expect(totalEntered).to.equal(20)
@@ -240,7 +244,7 @@ describe('Raffle', function () {
     ethers.provider.send('evm_increaseTime', [86401]) // add 60 seconds
     await raffle.drawRandomNumber('0')
     const requestId = await linkContract.getRequestId()
-    const randomness = new Date().getMilliseconds()
+    const randomness = ethers.utils.keccak256(new Date().getMilliseconds())
     await raffle.rawFulfillRandomness(requestId, randomness)
 
     const raffleInfo = await raffle.raffleInfo('0')
@@ -265,6 +269,34 @@ describe('Raffle', function () {
 
   it('🙅‍♀️  Cannot claim another random number', async function () {
     await truffleAssert.reverts(raffle.drawRandomNumber('0'), 'Raffle: Random number already generated')
+  })
+
+  it('🙆‍♂️  Should not claim other person\'s prizes', async function () {
+    const winners = await raffle['winners(uint256)']('0')
+    await truffleAssert.reverts(bobRaffle.claimPrize('0', getWins(account, winners)), 'Raffle: Did not win prize')
+  })
+
+  it('🙆‍♂️  Should not claim same prizes twice', async function () {
+    const winners = await raffle['winners(uint256)']('0')
+    const casperWins = getWins(casperAddress, winners)
+    let wins = JSON.parse(JSON.stringify(casperWins))
+    let value = wins[1][1][1][1]
+    value.splice(value.length, 0, value[0])
+    await truffleAssert.reverts(casperRaffle.claimPrize('0', wins), 'Raffle: prizeNumber does not exist or is not lesser than last value')
+
+    wins = JSON.parse(JSON.stringify(casperWins))
+    value = wins[1][1]
+    // console.log(JSON.stringify(value, null, 4))
+    value.splice(value.length, 0, value[0])
+    // console.log(JSON.stringify(value, null, 4))
+    await truffleAssert.reverts(casperRaffle.claimPrize('0', wins), 'Raffle prize type does not exist or is not lesser than last value')
+
+    wins = JSON.parse(JSON.stringify(casperWins))
+    value = wins
+    // console.log(JSON.stringify(value, null, 4))
+    value.splice(value.length, 0, value[0])
+    // console.log(JSON.stringify(value, null, 4))
+    await truffleAssert.reverts(casperRaffle.claimPrize('0', wins), 'User entry does not exist or is not lesser than last value')
   })
 
   it('🙆‍♂️  Should claim prizes', async function () {
