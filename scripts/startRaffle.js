@@ -2,7 +2,7 @@
 
 const { deployContracts } = require('./deploy.js')
 
-async function main() {
+async function main () {
   const accounts = await ethers.getSigners()
   const account = await accounts[0].getAddress()
   let stakeAddress
@@ -18,7 +18,7 @@ async function main() {
     linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088'
     keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
 
-      ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash)
+    ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash)
     // rafflesAddress = '0x45944862b6274ea45fbc6063996112d41e4c2e49'
     // prizeAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
     //  rafflesAddress = '0x1e9Aa7d76A69271660fB43199ad69B2e65d48A63'
@@ -36,7 +36,7 @@ async function main() {
     linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088'
     keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
 
-      ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash)
+    ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash)
 
     stakeAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
     vouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
@@ -108,8 +108,9 @@ async function main() {
   // 86400 = 1 day
   const threeDays = 86400 * 3
   // console.log(JSON.stringify(raffleItems, null, 2))
+  const time = 3660 // one hour an one minute
   console.log('Execute startRaffle function')
-  tx = await rafflesContract.startRaffle(secondsSinceEpoch + threeDays, raffleItems)
+  tx = await rafflesContract.startRaffle(secondsSinceEpoch + time, raffleItems)
   await tx.wait()
   console.log('Started raffle')
   // console.log('Here are the raffle items:')
