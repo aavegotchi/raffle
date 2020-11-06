@@ -6,13 +6,17 @@ import "hardhat/console.sol";
 
 import "./interfaces/IERC1155.sol";
 import "./chainlink/LinkTokenInterface.sol";
+import "./interfaces/IERC173.sol";
+import "./interfaces/IERC165.sol";
 
 // All state variables are accessed through this struct
 // To avoid name clashes and make clear a variable is a state variable
 // state variable access starts with "s." which accesses variables in this struct
 struct AppStorage {
+    // IERC165
+    mapping(bytes4 => bool) supportedInterfaces;
     Raffle[] raffles;
-    // Nonces for each VRF key from which randomness has been requested.
+    // Nonces for VRF keyHash from which randomness has been requested.
     // Must stay in sync with VRFCoordinator[_keyHash][this]
     // keyHash => nonce
     mapping(bytes32 => uint256) nonces;
@@ -64,7 +68,7 @@ struct RaffleItem {
     RaffleItemPrize[] raffleItemPrizes; // Prizes that can be won for this raffle item
 }
 
-contract RafflesContract {
+contract RafflesContract is IERC173, IERC165 {
     // State variables are prefixed with s.
     AppStorage internal s;
     // Immutable values are prefixed with im_ to easily identify them in code
@@ -73,7 +77,6 @@ contract RafflesContract {
     bytes32 internal immutable im_keyHash;
 
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event RaffleStarted(uint256 indexed raffleId, uint256 raffleEnd, RaffleItemIO[] raffleItems);
     event RaffleTicketsEntered(uint256 indexed raffleId, address entrant, TicketItemIO[] ticketItems);
     event RaffleRandomNumber(uint256 indexed raffleId, uint256 randomNumber);
@@ -91,6 +94,14 @@ contract RafflesContract {
         im_keyHash = _keyHash; //0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4; // Ropsten details
         // 0.1 LINK
         s.fee = 1e17;
+
+        // adding ERC165 data
+        s.supportedInterfaces[type(IERC165).interfaceId] = true;
+        s.supportedInterfaces[type(IERC173).interfaceId] = true;
+    }
+
+    function supportsInterface(bytes4 _interfaceId) external view override returns (bool) {
+        return s.supportedInterfaces[_interfaceId];
     }
 
     // VRF Functionality ////////////////////////////////////////////////////////////////
@@ -218,13 +229,17 @@ contract RafflesContract {
         im_link.transfer(_to, _value);
     }
 
+    function linkBalance() external view returns (uint256 linkBalance_) {
+        linkBalance_ = im_link.balanceOf(address(this));
+    }
+
     /////////////////////////////////////////////////////////////////////////////////////
 
-    function owner() external view returns (address) {
+    function owner() external view override returns (address) {
         return s.contractOwner;
     }
 
-    function transferOwnership(address _newContractOwner) external {
+    function transferOwnership(address _newContractOwner) external override {
         address previousOwner = s.contractOwner;
         require(msg.sender == previousOwner, "Raffle: Must be contract owner");
         s.contractOwner = _newContractOwner;

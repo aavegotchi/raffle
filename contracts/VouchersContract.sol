@@ -19,14 +19,12 @@ struct AppStorage {
     mapping(bytes4 => bool) supportedInterfaces;
     mapping(address => mapping(address => bool)) approved;
     Vouchers[] vouchers;
-    address uniV2PoolContract;
     string vouchersBaseUri;
     address contractOwner;
 }
 
-contract VouchersContract is IERC1155 {
+contract VouchersContract is IERC1155, IERC173, IERC165 {
     AppStorage internal s;
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     bytes4 internal constant ERC1155_BATCH_ACCEPTED = 0xbc197c81; // Return value from `onERC1155BatchReceived` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))`).
 
@@ -47,11 +45,15 @@ contract VouchersContract is IERC1155 {
         s.supportedInterfaces[type(IERC1155Metadata_URI).interfaceId] = true;
     }
 
-    function owner() external view returns (address) {
+    function supportsInterface(bytes4 _interfaceId) external view override returns (bool) {
+        return s.supportedInterfaces[_interfaceId];
+    }
+
+    function owner() external view override returns (address) {
         return s.contractOwner;
     }
 
-    function transferOwnership(address _newContractOwner) external {
+    function transferOwnership(address _newContractOwner) external override {
         address previousOwner = s.contractOwner;
         require(msg.sender == previousOwner, "Vouchers: Must be contract owner");
         s.contractOwner = _newContractOwner;
@@ -83,7 +85,7 @@ contract VouchersContract is IERC1155 {
         if (size > 0) {
             require(
                 ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, address(0), ids, _values, _data),
-                "Vouchers: Transfer rejected/failed by _to"
+                "Vouchers: createVoucherTypes rejected/failed"
             );
         }
     }
@@ -113,7 +115,7 @@ contract VouchersContract is IERC1155 {
         if (size > 0) {
             require(
                 ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, address(0), _ids, _values, _data),
-                "Vouchers: Transfer rejected/failed by _to"
+                "Vouchers: Mint rejected/failed"
             );
         }
     }
@@ -216,7 +218,7 @@ contract VouchersContract is IERC1155 {
         if (size > 0) {
             require(
                 ERC1155_BATCH_ACCEPTED == IERC1155TokenReceiver(_to).onERC1155BatchReceived(msg.sender, _from, _ids, _values, _data),
-                "Vouchers: Transfer rejected/failed by _to"
+                "Vouchers: Batch transfer rejected/failed by _to"
             );
         }
     }
