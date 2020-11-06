@@ -469,7 +469,7 @@ contract RafflesContract {
         }
         for (uint256 i; i < _ticketItems.length; i++) {
             TicketItemIO calldata ticketItem = _ticketItems[i];
-            require(ticketItem.ticketQuantity > 0, "Raffle: ticket quantity cannot be zero");
+            require(ticketItem.ticketQuantity > 0, "Raffle: Ticket quantity cannot be zero");
             // get the raffle item
             uint256 raffleItemIndex = raffle.raffleItemIndexes[ticketItem.ticketAddress][ticketItem.ticketId];
             require(raffleItemIndex > 0, "Raffle: Raffle item doesn't exist for this raffle");
@@ -496,11 +496,12 @@ contract RafflesContract {
     // Ticket numbers are numbers between 0 and raffleItem.totalEntered - 1 inclusive.
     // Winning ticket numbers are ticket numbers that won one or more prizes
     // Prize numbers are numbers between 0 and raffleItemPrize.prizeQuanity - 1 inclusive.
+    // Prize numbers are used to calculate ticket numbers
     // Winning prize numbers are prize numbers used to calculate winning ticket numbers
     struct PrizeWinnerIO {
         address entrant; // user address
         bool claimed; // has claimed prizes
-        uint256 UserEntriesIndex; // index into userEntries array (Who entered into raffle and by how much)
+        uint256 userEntriesIndex; // index into userEntries array (Who entered into raffle and by how much)
         uint256 raffleItemIndex; // index into RaffleItems array
         uint256 raffleItemPrizeIndex; // index into RaffleItemPrize array (What is the prize)
         uint256[] winningPrizeNumbers; // winning prize numbers (The length of the array is the number of prizes won)
@@ -602,9 +603,12 @@ contract RafflesContract {
 
     // Ticket numbers are numbers between 0 and raffleItem.totalEntered - 1 inclusive.
     // Winning ticket numbers are ticket numbers that won one or more prizes
+    // Prize numbers are numbers between 0 and raffleItemPrize.prizeQuanity - 1 inclusive.
+    // Prize numbers are used to calculate ticket numbers
+    // Winning prize numbers are prize numbers used to calculate winning ticket numbers
     struct PrizesWinIO {
         uint256 raffleItemPrizeIndex; // index into the raffleItemPrizes array (which prize was won)
-        uint256[] winningTicketNumbers; // ticket numbers between 0 and raffleItem.totalEntered that won
+        uint256[] winningPrizeNumbers; // ticket numbers between 0 and raffleItem.totalEntered that won
     }
 
     /**
@@ -648,25 +652,25 @@ contract RafflesContract {
                 require(prize.raffleItemPrizeIndex > lastValue || j == 0, "Raffle: raffleItemPrizeIndex not greater than last raffleItemPrizeIndex");
                 RaffleItemPrize memory raffleItemPrize = raffleItemPrizes[prize.raffleItemPrizeIndex];
                 lastValue = 0;
-                for (uint256 k; k < prize.winningTicketNumbers.length; k++) {
-                    uint256 prizeQuantity = prize.winningTicketNumbers[k];
-                    require(prizeQuantity < raffleItemPrize.prizeQuantity, "Raffle: prizeQuantity does not exist");
+                for (uint256 k; k < prize.winningPrizeNumbers.length; k++) {
+                    uint256 prizeNumber = prize.winningPrizeNumbers[k];
+                    require(prizeNumber < raffleItemPrize.prizeQuantity, "Raffle: prizeQuantity does not exist");
                     // Used to prevent duplicate prize.winningTickets[k] from being used
-                    require(prizeQuantity > lastValue || k == 0, "Raffle: Prize value not greater than last prize value");
+                    require(prizeNumber > lastValue || k == 0, "Raffle: Prize value not greater than last prize value");
                     uint256 winningNumber = uint256(
-                        keccak256(abi.encodePacked(raffle.randomNumber, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, prizeQuantity))
+                        keccak256(abi.encodePacked(raffle.randomNumber, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, prizeNumber))
                     ) % totalEntered;
                     require(winningNumber >= userEntries.rangeStart && winningNumber < userEntries.rangeEnd, "Raffle: Did not win prize");
-                    lastValue = prizeQuantity;
+                    lastValue = prizeNumber;
                 }
-                // emit RaffleClaimPrize(_raffleId, msg.sender, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, prize.winningTickets.length);
-                // IERC1155(raffleItemPrize.prizeAddress).safeTransferFrom(
-                //     address(this),
-                //     msg.sender,
-                //     raffleItemPrize.prizeId,
-                //     prize.winningTickets.length,
-                //     ""
-                // );
+                emit RaffleClaimPrize(_raffleId, msg.sender, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, prize.winningPrizeNumbers.length);
+                IERC1155(raffleItemPrize.prizeAddress).safeTransferFrom(
+                    address(this),
+                    msg.sender,
+                    raffleItemPrize.prizeId,
+                    prize.winningPrizeNumbers.length,
+                    ""
+                );
                 lastValue = prize.raffleItemPrizeIndex;
             }
             lastValue = win.userEntriesIndex;

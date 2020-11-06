@@ -10,9 +10,9 @@ function getWins (entrantAddress, winners) {
   for (const winner of winners) {
     if (winner.entrant === entrantAddress) {
       if (winner.userEntriesIndex.eq(lastValue)) {
-        prizeWin.push([winner.raffleItemPrizeIndex, winner.prizeValues])
+        prizeWin.push([winner.raffleItemPrizeIndex, winner.winningPrizeNumbers])
       } else {
-        prizeWin = [[winner.raffleItemPrizeIndex, winner.prizeValues]]
+        prizeWin = [[winner.raffleItemPrizeIndex, winner.winningPrizeNumbers]]
         wins.push([
           winner.userEntriesIndex,
           prizeWin
@@ -248,7 +248,7 @@ describe('Raffle', function () {
     let totalPrizes = 0
 
     winners.forEach((obj) => {
-      totalPrizes = totalPrizes + Number(obj.prizeValues.length)
+      totalPrizes = totalPrizes + Number(obj.winningPrizeNumbers.length)
       expect(obj.claimed).to.equal(false)
     })
 
