@@ -2,6 +2,8 @@
 require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-ethers')
 require('hardhat-gas-reporter')
+require('hardhat-contract-sizer')
+
 require('dotenv').config()
 
 // This is a sample Buidler task. To learn how to create your own go to
@@ -19,8 +21,13 @@ task('accounts', 'Prints the list of accounts', async () => {
 // defaultNetwork, networks, solc, and paths.
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
+  contractSizer: {
+    alphaSort: false,
+    runOnCompile: true,
+    disambiguatePaths: false
+  },
   gasReporter: {
-    enabled: true,
+    enabled: false,
     currency: 'USD',
     gasPrice: 21
   },

@@ -30,7 +30,7 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
 
     constructor(address _contractOwner) {
         s.contractOwner = _contractOwner;
-        // s.vouchersBaseUri = "";
+        s.vouchersBaseUri = "";
 
         // adding ERC165 data
         s.supportedInterfaces[type(IERC165).interfaceId] = true;
@@ -60,6 +60,13 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
         emit OwnershipTransferred(previousOwner, _newContractOwner);
     }
 
+    /**
+        @notice Creates new voucher types and mints vouchers
+        @dev Can only be called by contract owner
+        @param _to      Who gets the vouchers that are minted
+        @param _values  How many vouchers to mint for each new voucher type
+        @param _data    Additional data with no specified format, MUST be sent unaltered in call to `onERC1155BatchReceived` on `_to`
+    */
     function createVoucherTypes(
         address _to,
         uint256[] calldata _values,
@@ -90,6 +97,14 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
         }
     }
 
+    /**
+        @notice Mints new vouchers
+        @dev Can only be called by contract owner
+        @param _to      Who gets the vouchers that are minted
+        @param _ids     Which voucher types to mint
+        @param _values  How many vouchers to mint for each voucher type
+        @param _data    Additional data with no specified format, MUST be sent unaltered in call to `onERC1155BatchReceived` on `_to`
+    */
     function mintVouchers(
         address _to,
         uint256[] calldata _ids,
@@ -120,6 +135,10 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
         }
     }
 
+    /**
+        @notice Set the base url for all voucher types
+        @param _value The new base url        
+    */
     function setBaseURI(string memory _value) external {
         require(msg.sender == s.contractOwner, "Vouchers: Must be contract owner");
         s.vouchersBaseUri = _value;
@@ -128,6 +147,10 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
         }
     }
 
+    /**
+        @notice Get the URI for a voucher type
+        @return URI for token type
+    */
     function uri(uint256 _id) external view returns (string memory) {
         require(_id < s.vouchers.length, "_id not found for  ticket");
         return string(abi.encodePacked(s.vouchersBaseUri, LibStrings.uintStr(_id)));
@@ -223,6 +246,10 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
         }
     }
 
+    /**
+        @notice Get total supply of each voucher type        
+        @return totalSupplies_ The totalSupply of each voucher type
+    */
     function totalSupplies() external view returns (uint256[] memory totalSupplies_) {
         uint256 vouchersLength = s.vouchers.length;
         totalSupplies_ = new uint256[](vouchersLength);
@@ -231,11 +258,21 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
         }
     }
 
+    /**
+        @notice Get total supply of voucher type
+        @param _id           The voucher type id
+        @return totalSupply_ The totalSupply of a voucher type
+    */
     function totalSupply(uint256 _id) external view returns (uint256 totalSupply_) {
         require(_id < s.vouchers.length, "Vourchers:  Voucher not found");
         totalSupply_ = s.vouchers[_id].totalSupply;
     }
 
+    /**
+        @notice Get balance of an account's vouchers for each voucher type.
+        @param _owner    The address of the token holder        
+        @return balances_ The _owner's balances of the token types
+    */
     function balanceOfAll(address _owner) external view returns (uint256[] memory balances_) {
         uint256 vouchersLength = s.vouchers.length;
         balances_ = new uint256[](vouchersLength);
@@ -249,7 +286,7 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
         @param _owner    The address of the token holder
         @param _id       ID of the token
         @return balance_ The _owner's balance of the token type requested
-     */
+    */
     function balanceOf(address _owner, uint256 _id) external view override returns (uint256 balance_) {
         require(_id < s.vouchers.length, "Vouchers: _id not found");
         balance_ = s.vouchers[_id].accountBalances[_owner];
