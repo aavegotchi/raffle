@@ -1,5 +1,13 @@
 # Raffle and Vouchers
 
+### Tests
+
+1. Clone this project.
+2. Run `npm install` to install what is needed.
+3. To run the tests run `npx hardhat test`
+
+Tests are in the `test/test.js` file.
+
 Kovan addresses
 - raffle: 0x705F32B7D678eE71085ed11ddcba7378367f1582
 - voucher: 0x0f0F109c211DAa45C8fD33e20bc8d3C45bE10b15
