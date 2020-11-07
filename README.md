@@ -8,6 +8,8 @@
 
 Tests are in the `test/test.js` file.
 
+The `getWins` Javascript function in the `test/test.js` file is used to process the return value of the `winners` function in the `RafflesContract.sol` contract.  The return value of `getWins` is fed into the `claimPrizes` function in the `RafflesContract.sol` contract. The `claimPrizes` function verifies the wins and then transfers the prizes to the winner.
+
 Kovan addresses
 - raffle: 0x705F32B7D678eE71085ed11ddcba7378367f1582
 - voucher: 0x0f0F109c211DAa45C8fD33e20bc8d3C45bE10b15
