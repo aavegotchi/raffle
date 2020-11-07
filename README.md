@@ -23,9 +23,11 @@ We have categorized the rewards into four rough categories:
 
 Found an issue? Contact @coderdannn via Discord, Telegram, or Twitter, or simply create an issue on Github.
 
-### Kown Issue
+### Known Issues
 
-It is known that if one person wins a great deal of prizes, for example 5,000 prizes, then the `claimPrize` function may cost too much gas to execute, therefore locking the user's prizes in the contract. However this is impractical for our use. Our first raffle will have 6,010 prizes. If only 10 people enter tickets into the raffle that is about 601 prizes per person. We expect many more people than 10 to enter tickets in the raffle.
+1. It is known that if one person wins a great deal of prizes, for example 5,000 prizes, then the `claimPrize` function may cost too much gas to execute, therefore locking the user's prizes in the contract. However this is impractical for our use. Our first raffle will have 6,010 prizes. If only 10 people enter tickets into the raffle that is about 601 prizes per person. We expect many more people than 10 to enter tickets in the raffle.
+
+2. We are currently investigating gas issues with the `winners` function. Reporting a gas issue with the `winners` function does not apply to this bounty.
 
 Kovan addresses
 - raffle: 0x705F32B7D678eE71085ed11ddcba7378367f1582
