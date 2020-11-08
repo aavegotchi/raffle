@@ -194,11 +194,12 @@ contract RafflesContract is IERC173, IERC165 {
         Raffle storage raffle = s.raffles[_raffleId];
         require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
         require(raffle.randomNumber == 0, "Raffle: Random number already generated");
+        require(raffle.randomNumberPending == false || msg.sender == s.contractOwner, "Raffle: Random number is pending");
+        raffle.randomNumberPending = true;
         // Use Chainlink VRF to generate random number
         require(im_link.balanceOf(address(this)) > s.fee, "Not enough LINK");
         bytes32 requestId = requestRandomness(im_keyHash, s.fee, uint256(keccak256(abi.encodePacked(block.number, msg.sender))));
         s.requestIdToRaffleId[requestId] = _raffleId;
-        raffle.randomNumberPending = true;
     }
 
     // rawFulfillRandomness is called by VRFCoordinator when it receives a valid VRFproof.
