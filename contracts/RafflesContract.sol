@@ -641,16 +641,21 @@ contract RafflesContract is IERC173, IERC165 {
      * @dev All items in _wins are verified as actually won by the address that calls this function and reverts otherwise.
      * @dev Each entrant address can only claim prizes once, so be sure to include all entries and prizes won.
      * @dev Prizes are transfered to the address that calls this function.
+     * @param _entrant The entrant that won and is claiming prizes
      * @param _raffleId The raffle that prizes were won in.
      * @param _wins Contains only winning entries and prizes that were won.
      */
-    function claimPrize(uint256 _raffleId, ticketWinIO[] calldata _wins) external {
+    function internalClaimPrize(
+        address _entrant,
+        uint256 _raffleId,
+        ticketWinIO[] calldata _wins
+    ) internal {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         uint256 randomNumber = raffle.randomNumber;
         require(randomNumber > 0, "Raffle: Random number not generated yet");
-        require(raffle.prizeClaimed[msg.sender] == false, "Raffle: Any prizes for account have already been claimed");
-        raffle.prizeClaimed[msg.sender] = true;
+        require(raffle.prizeClaimed[_entrant] == false || msg.sender == s.contractOwner, "Raffle: Any prizes for account have already been claimed");
+        raffle.prizeClaimed[_entrant] = true;
         // Logic:
         // 1. Loop through wins
         // 2. Verify provided userEntryIndex exists and is not a duplicate
@@ -661,7 +666,7 @@ contract RafflesContract is IERC173, IERC165 {
         // 7. Verify that winning prize number actually won
         // 8. Transfer prizes to winner
         //--------------------------------------------
-        UserEntry[] storage userEntries = raffle.userEntries[msg.sender];
+        UserEntry[] storage userEntries = raffle.userEntries[_entrant];
         // lastValue serves two purposes:
         // 1. Ensures that a value is less than the length of an array
         // 2. Prevents duplicates. Subsequent values must be lesser
@@ -669,7 +674,7 @@ contract RafflesContract is IERC173, IERC165 {
         uint256 lastValue = userEntries.length;
         for (uint256 i; i < _wins.length; i++) {
             ticketWinIO calldata win = _wins[i];
-            // Serves two purposes: 1. Ensure is less than raffle.userEntries[msg.sender].length. 2. prevents duplicates
+            // Serves two purposes: 1. Ensure is less than raffle.userEntries[_entrant].length. 2. prevents duplicates
             require(win.userEntryIndex < lastValue, "Raffle: User entry does not exist or is not lesser than last value");
             UserEntry memory userEntry = userEntries[win.userEntryIndex];
             // total number of tickets that have been entered for a raffle item
@@ -692,10 +697,10 @@ contract RafflesContract is IERC173, IERC165 {
                     require(winningTicketNumber >= userEntry.rangeStart && winningTicketNumber < userEntry.rangeEnd, "Raffle: Did not win prize");
                     lastValue = prizeNumber;
                 }
-                emit RaffleClaimPrize(_raffleId, msg.sender, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, prize.winningPrizeNumbers.length);
+                emit RaffleClaimPrize(_raffleId, _entrant, raffleItemPrize.prizeAddress, raffleItemPrize.prizeId, prize.winningPrizeNumbers.length);
                 IERC1155(raffleItemPrize.prizeAddress).safeTransferFrom(
                     address(this),
-                    msg.sender,
+                    _entrant,
                     raffleItemPrize.prizeId,
                     prize.winningPrizeNumbers.length,
                     ""
@@ -704,5 +709,21 @@ contract RafflesContract is IERC173, IERC165 {
             }
             lastValue = win.userEntryIndex;
         }
+    }
+
+    // Called by entrants to claim their prizes
+    function claimPrize(uint256 _raffleId, ticketWinIO[] calldata _wins) external {
+        internalClaimPrize(msg.sender, _raffleId, _wins);
+    }
+
+    // Called by admin on behalf of an entrant
+    // This is here for safety, in case the user claims only a portion if his/her prizes
+    // Admin can claim the rest of the prizes for the user.
+    function claimPrizeAdmin(
+        address _entrant,
+        uint256 _raffleId,
+        ticketWinIO[] calldata _wins
+    ) internal {
+        internalClaimPrize(_entrant, _raffleId, _wins);
     }
 }
