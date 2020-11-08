@@ -41,6 +41,8 @@ struct Raffle {
     address[] entrants;
     // vrf randomness
     uint256 randomNumber;
+    // requested vrf random number
+    bool randomNumberPending;
     // date in timestamp seconds when a raffle ends
     uint256 raffleEnd;
 }
@@ -196,6 +198,7 @@ contract RafflesContract is IERC173, IERC165 {
         require(im_link.balanceOf(address(this)) > s.fee, "Not enough LINK");
         bytes32 requestId = requestRandomness(im_keyHash, s.fee, uint256(keccak256(abi.encodePacked(block.number, msg.sender))));
         s.requestIdToRaffleId[requestId] = _raffleId;
+        raffle.randomNumberPending = true;
     }
 
     // rawFulfillRandomness is called by VRFCoordinator when it receives a valid VRFproof.
@@ -214,6 +217,7 @@ contract RafflesContract is IERC173, IERC165 {
         require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
         require(raffle.randomNumber == 0, "Raffle: Random number already generated");
         s.raffles[raffleId].randomNumber = _randomness;
+        raffle.randomNumberPending = false;
         emit RaffleRandomNumber(raffleId, _randomness);
     }
 
@@ -374,17 +378,16 @@ contract RafflesContract is IERC173, IERC165 {
         returns (
             uint256 raffleEnd_,
             RaffleItemIO[] memory raffleItems_,
-            bool numberChosen_
+            uint256 randomNumber_
         )
     {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         raffleEnd_ = raffle.raffleEnd;
-
-        if (raffle.randomNumber == 0) {
-            numberChosen_ = false;
+        if (raffle.randomNumberPending == true) {
+            randomNumber_ = 1;
         } else {
-            numberChosen_ = true;
+            randomNumber_ = raffle.randomNumber;
         }
         // Loop over and get all the raffle itmes, which includes ERC1155 tickets and ERC1155 prizes
         raffleItems_ = new RaffleItemIO[](raffle.raffleItems.length);

@@ -26,6 +26,10 @@ function getWins (entrantAddress, winners) {
   return wins
 }
 
+function winners (raffleId) {
+
+}
+
 describe('Raffle', function () {
   let account
   let bob
