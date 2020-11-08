@@ -508,6 +508,12 @@ contract RafflesContract is IERC173, IERC165 {
         }
     }
 
+    function getEntrants(uint256 _raffleId) external view returns (address[] memory entrants_) {
+        require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
+        Raffle storage raffle = s.raffles[_raffleId];
+        entrants_ = raffle.entrants;
+    }
+
     // Ticket numbers are numbers between 0 and raffleItem.totalEntered - 1 inclusive.
     // Winning ticket numbers are ticket numbers that won one or more prizes
     // Prize numbers are numbers between 0 and raffleItemPrize.prizeQuanity - 1 inclusive.

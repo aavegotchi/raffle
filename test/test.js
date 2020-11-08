@@ -277,7 +277,11 @@ describe('Raffle', function () {
   })
 
   it('🙆‍♂️  Should not claim same prizes twice', async function () {
-    const winners = await raffle['winners(uint256)']('0')
+    let winners = await raffle.estimateGas['winners(uint256)']('0')
+
+    console.log(winners.toString())
+
+    winners = await raffle['winners(uint256)']('0')
     const casperWins = getWins(casperAddress, winners)
     let wins = JSON.parse(JSON.stringify(casperWins))
     let value = wins[1][1][1][1]
