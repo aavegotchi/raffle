@@ -5,7 +5,7 @@ const { deployContracts } = require('./deploy.js')
 async function main () {
   const accounts = await ethers.getSigners()
   const account = await accounts[0].getAddress()
-  let stakeAddress
+  let ticketAddress
   let prizeAddress
   let rafflesAddress
   let vouchersContract
@@ -28,7 +28,7 @@ async function main () {
     // Kovan LINK : 0xa36085F69e2889c224210F603D836748e7dC0088
     // Kovan Key Hash: 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4
 
-    stakeAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
+    ticketAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
     vouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
   } else if (hre.network.name === 'hardhat') {
@@ -38,49 +38,49 @@ async function main () {
 
     ;[prizeAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash)
 
-    stakeAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
+    ticketAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
     vouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
   } else {
     throw Error('No network settings for ' + hre.network.name)
   }
 
-  const prizeValues = []
+  const prizeQuantitys = []
   const raffleItems = []
   let prizeId = 0
-  let prizeValue
-  for (let stakeId = 0; stakeId < 6; stakeId++) {
-    if (stakeId === 0) {
-      prizeValue = 1000
-    } else if (stakeId === 1) {
-      prizeValue = 500
-    } else if (stakeId === 2) {
-      prizeValue = 300
-    } else if (stakeId === 3) {
-      prizeValue = 150
-    } else if (stakeId === 4) {
-      prizeValue = 50
-    } else if (stakeId === 5) {
-      prizeValue = 5
+  let prizeQuantity
+  for (let ticketId = 0; ticketId < 6; ticketId++) {
+    if (ticketId === 0) {
+      prizeQuantity = 1000
+    } else if (ticketId === 1) {
+      prizeQuantity = 500
+    } else if (ticketId === 2) {
+      prizeQuantity = 300
+    } else if (ticketId === 3) {
+      prizeQuantity = 150
+    } else if (ticketId === 4) {
+      prizeQuantity = 50
+    } else if (ticketId === 5) {
+      prizeQuantity = 5
     }
     let jLength
-    if (stakeId === 5) {
+    if (ticketId === 5) {
       jLength = 2
     } else {
       jLength = 3
     }
     const prizeItems = []
     raffleItems.push({
-      stakeAddress: stakeAddress,
-      stakeId: stakeId,
+      ticketAddress: ticketAddress,
+      ticketId: ticketId,
       raffleItemPrizes: prizeItems
     })
     for (let j = 0; j < jLength; j++) {
-      prizeValues.push(prizeValue)
+      prizeQuantitys.push(prizeQuantity)
       prizeItems.push({
         prizeAddress: prizeAddress,
         prizeId: prizeId,
-        prizeValue: prizeValue
+        prizeQuantity: prizeQuantity
       })
       prizeId++
     }
@@ -88,15 +88,15 @@ async function main () {
   let tx
 
   // First raffle, 3 days
-  tx = await vouchersContract.createVoucherTypes(account, prizeValues, '0x')
+  tx = await vouchersContract.createVoucherTypes(account, prizeQuantitys, '0x')
   await tx.wait()
-  // console.log(prizeValues)
+  // console.log(prizeQuantitys)
 
   // const supplies = await vouchersContract.totalSupplies()
   // console.log('supplies:', supplies)
 
   // const ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-  // await vouchersContract.mintVouchers(account, ids, prizeValues, '0x')
+  // await vouchersContract.mintVouchers(account, ids, prizeQuantitys, '0x')
   console.log('Created voucher types and minted vouchers')
   tx = await vouchersContract.setApprovalForAll(rafflesContract.address, true)
   await tx.wait()
@@ -106,10 +106,11 @@ async function main () {
   // const aWeek = 604800 * 2// 604800 == 1 week
   // const threeDays = 3600
   // 86400 = 1 day
-  const threeDays = 86400 * 3
+  // const threeDays = 86400 * 3
   // console.log(JSON.stringify(raffleItems, null, 2))
   const time = 3660 // one hour an one minute
   console.log('Execute startRaffle function')
+  // console.log(raffleItems)
   tx = await rafflesContract.startRaffle(secondsSinceEpoch + time, raffleItems)
   await tx.wait()
   console.log('Started raffle')
