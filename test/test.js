@@ -3,7 +3,7 @@
 const { expect } = require('chai')
 const truffleAssert = require('truffle-assertions')
 
-function getWins (entrantAddress, winners) {
+function getWins(entrantAddress, winners) {
   const wins = []
   let lastValue = -1
   let prizeWin
@@ -132,7 +132,7 @@ describe('Raffle', function () {
 
     const raffleEnd = Number(info.raffleEnd_)
 
-    expect(info.numberChosen_).to.equal(false)
+    expect(info.randomNumber_).to.equal(0)
     expect(raffleEnd).to.greaterThan(Number((Date.now() / 1000).toFixed()))
 
     expect(info.raffleItems_.length).to.equal(3)
@@ -242,12 +242,25 @@ describe('Raffle', function () {
 
   it('🙆‍♂️  Should draw random number for each prize', async function () {
     ethers.provider.send('evm_increaseTime', [86401]) // add 60 seconds
+
+    let raffleInfo = await raffle.raffleInfo('0')
+    //Status is not drawn (0) 
+    expect(raffleInfo.randomNumber_).to.equal(0)
+
     await raffle.drawRandomNumber('0')
+
+    raffleInfo = await raffle.raffleInfo('0')
+    //Status is pending (1)
+    expect(raffleInfo.randomNumber_).to.equal(1)
+
+    //Bob cannot call the drawRandomNumber function while pending because he isn't contractOwner
+    await truffleAssert.reverts(bobRaffle.drawRandomNumber('0'), "Raffle: Random number is pending")
+
     const requestId = await linkContract.getRequestId()
     const randomness = ethers.utils.keccak256(new Date().getMilliseconds())
     await raffle.rawFulfillRandomness(requestId, randomness)
 
-    const raffleInfo = await raffle.raffleInfo('0')
+    raffleInfo = await raffle.raffleInfo('0')
     const winners = await raffle['winners(uint256)']('0')
     let totalPrizes = 0
 
@@ -256,7 +269,7 @@ describe('Raffle', function () {
       expect(obj.claimed).to.equal(false)
     })
 
-    expect(raffleInfo.numberChosen_).to.equal(true)
+    expect(Number(raffleInfo.randomNumber_)).to.greaterThan(1)
     expect(totalPrizes).to.equal(68)
   })
 
@@ -277,11 +290,7 @@ describe('Raffle', function () {
   })
 
   it('🙆‍♂️  Should not claim same prizes twice', async function () {
-    let winners = await raffle.estimateGas['winners(uint256)']('0')
-
-    console.log(winners.toString())
-
-    winners = await raffle['winners(uint256)']('0')
+    const winners = await raffle['winners(uint256)']('0')
     const casperWins = getWins(casperAddress, winners)
     let wins = JSON.parse(JSON.stringify(casperWins))
     let value = wins[1][1][1][1]
@@ -361,7 +370,7 @@ describe('Raffle', function () {
 
     const raffleEnd = Number(info.raffleEnd_)
 
-    expect(info.numberChosen_).to.equal(false)
+    expect(info.randomNumber_).to.equal(0)
     expect(raffleEnd).to.greaterThan(Number((Date.now() / 1000).toFixed()))
 
     expect(info.raffleItems_.length).to.equal(3)
