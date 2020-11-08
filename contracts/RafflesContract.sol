@@ -193,7 +193,11 @@ contract RafflesContract is IERC173, IERC165 {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
         require(raffle.raffleEnd < block.timestamp, "Raffle: Raffle time has not expired");
-        require(raffle.randomNumber == 0, "Raffle: Random number already generated");
+
+        //Status is "not drawn" or "pending"
+        require(raffle.randomNumber <= 1, "Raffle: Random number already generated");
+
+        //Status cannot be pending to re-call, but can be overriden by contract owner if necessary
         require(raffle.randomNumberPending == false || msg.sender == s.contractOwner, "Raffle: Random number is pending");
         raffle.randomNumberPending = true;
         // Use Chainlink VRF to generate random number
