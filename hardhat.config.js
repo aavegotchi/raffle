@@ -23,11 +23,11 @@ task('accounts', 'Prints the list of accounts', async () => {
 module.exports = {
   contractSizer: {
     alphaSort: false,
-    runOnCompile: true,
+    runOnCompile: false,
     disambiguatePaths: false
   },
   gasReporter: {
-    enabled: false,
+    enabled: true,
     currency: 'USD',
     gasPrice: 21
   },
