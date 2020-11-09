@@ -36,6 +36,11 @@ module.exports = {
       url: process.env.KOVAN_URL,
       accounts: [process.env.SECRET],
       gasPrice: 20000000000
+    },
+    mainnet: {
+      url: process.env.MAINNET_URL,
+      accounts: [process.env.SECRET],
+      gasPrice: 20000000000
     }
   },
   // This is a sample solc configuration that specifies which version of solc to use

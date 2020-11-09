@@ -1,6 +1,6 @@
 /* global ethers */
 
-async function main (vrfCoordinator, linkAddress, keyHash) {
+async function main (vrfCoordinator, linkAddress, keyHash, fee) {
   const accounts = await ethers.getSigners()
   const account = await accounts[0].getAddress()
 
@@ -10,10 +10,10 @@ async function main (vrfCoordinator, linkAddress, keyHash) {
   console.log('Deployed VouchersContract:' + vouchersContract.address)
 
   const RafflesContract = await ethers.getContractFactory('RafflesContract')
-  const rafflesContract = await RafflesContract.deploy(account, vrfCoordinator, linkAddress, keyHash)
+  const rafflesContract = await RafflesContract.deploy(account, vrfCoordinator, linkAddress, keyHash, fee)
   await rafflesContract.deployed()
-  console.log()
   console.log('Deployed RaffleContract:' + rafflesContract.address)
+  console.log()
   return [vouchersContract.address, rafflesContract.address]
 }
 /*

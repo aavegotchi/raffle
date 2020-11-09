@@ -21,7 +21,8 @@ struct AppStorage {
     // keyHash => nonce
     mapping(bytes32 => uint256) nonces;
     mapping(bytes32 => uint256) requestIdToRaffleId;
-    uint256 fee;
+    bytes32 keyHash;
+    uint96 fee;
     address contractOwner;
 }
 
@@ -76,7 +77,6 @@ contract RafflesContract is IERC173, IERC165 {
     // Immutable values are prefixed with im_ to easily identify them in code
     LinkTokenInterface internal immutable im_link;
     address internal immutable im_vrfCoordinator;
-    bytes32 internal immutable im_keyHash;
 
     bytes4 internal constant ERC1155_ACCEPTED = 0xf23a6e61; // Return value from `onERC1155Received` call if a contract accepts receipt (i.e `bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))`).
     event RaffleStarted(uint256 indexed raffleId, uint256 raffleEnd, RaffleItemIO[] raffleItems);
@@ -88,14 +88,14 @@ contract RafflesContract is IERC173, IERC165 {
         address _contractOwner,
         address _vrfCoordinator,
         address _link,
-        bytes32 _keyHash
+        bytes32 _keyHash,
+        uint256 _fee
     ) {
         s.contractOwner = _contractOwner;
         im_vrfCoordinator = _vrfCoordinator;
         im_link = LinkTokenInterface(_link);
-        im_keyHash = _keyHash; //0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4;
-        // 0.1 LINK
-        s.fee = 1e17;
+        s.keyHash = _keyHash; //0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4;
+        s.fee = uint96(_fee);
 
         // adding ERC165 data
         s.supportedInterfaces[type(IERC165).interfaceId] = true;
@@ -197,8 +197,8 @@ contract RafflesContract is IERC173, IERC165 {
         require(raffle.randomNumberPending == false || msg.sender == s.contractOwner, "Raffle: Random number is pending");
         raffle.randomNumberPending = true;
         // Use Chainlink VRF to generate random number
-        require(im_link.balanceOf(address(this)) > s.fee, "Not enough LINK");
-        bytes32 requestId = requestRandomness(im_keyHash, s.fee, uint256(keccak256(abi.encodePacked(block.number, msg.sender))));
+        require(im_link.balanceOf(address(this)) >= s.fee, "Not enough LINK");
+        bytes32 requestId = requestRandomness(s.keyHash, s.fee, uint256(keccak256(abi.encodePacked(block.number, msg.sender))));
         s.requestIdToRaffleId[requestId] = _raffleId;
     }
 
@@ -222,9 +222,10 @@ contract RafflesContract is IERC173, IERC165 {
     }
 
     // Change the fee amount that is paid for VRF random numbers
-    function changeVRFFee(uint256 _newFee) external {
+    function changeVRFFee(uint256 _newFee, bytes32 _keyHash) external {
         require(msg.sender == s.contractOwner, "Raffle: Must be contract owner");
-        s.fee = _newFee;
+        s.fee = uint96(_newFee);
+        s.keyHash = _keyHash;
     }
 
     // Remove the LINK tokens from this contract that are used to pay for VRF random number fees
@@ -268,15 +269,18 @@ contract RafflesContract is IERC173, IERC165 {
      * @dev The _raffleItems argument tells what ERC1155 tickets can be entered for what ERC1155 prizes.
      * The _raffleItems get stored in the raffleItems state variable
      * The raffle prizes that can be won are transferred into this contract.
+     * @param _raffleDuration How long a raffle goes for, in seconds
+     * @param _raffleItems What tickets to enter for what prizes
      */
-    function startRaffle(uint256 _raffleEnd, RaffleItemIO[] calldata _raffleItems) external {
+    function startRaffle(uint256 _raffleDuration, RaffleItemIO[] calldata _raffleItems) external {
         require(msg.sender == s.contractOwner, "Raffle: Must be contract owner");
-        require(_raffleEnd > block.timestamp + 3600, "Raffle: _raffleEnd must be greater than 1 hour");
+        require(_raffleDuration >= 3600, "Raffle: _raffleDuration must be greater than 1 hour");
+        uint256 raffleEnd = block.timestamp + _raffleDuration;
         require(_raffleItems.length > 0, "Raffle: No raffle items");
         uint256 raffleId = s.raffles.length;
-        emit RaffleStarted(raffleId, _raffleEnd, _raffleItems);
+        emit RaffleStarted(raffleId, raffleEnd, _raffleItems);
         Raffle storage raffle = s.raffles.push();
-        raffle.raffleEnd = uint256(_raffleEnd);
+        raffle.raffleEnd = raffleEnd;
         for (uint256 i; i < _raffleItems.length; i++) {
             RaffleItemIO calldata raffleItemIO = _raffleItems[i];
             require(raffleItemIO.raffleItemPrizes.length > 0, "Raffle: No prizes");

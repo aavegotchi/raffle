@@ -59,6 +59,7 @@ describe('Raffle', function () {
 
     const vrfCoordinator = account
     const keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
+    const fee = ethers.utils.parseEther('2')
 
     const LinkTokenMock = await ethers.getContractFactory('LinkTokenMock')
     linkContract = await LinkTokenMock.deploy()
@@ -66,7 +67,7 @@ describe('Raffle', function () {
     const link = linkContract.address
 
     const RaffleContract = await ethers.getContractFactory('RafflesContract')
-    raffle = await RaffleContract.deploy(account, vrfCoordinator, link, keyHash)
+    raffle = await RaffleContract.deploy(account, vrfCoordinator, link, keyHash, fee)
     await raffle.deployed()
     raffleAddress = raffle.address
 
@@ -105,14 +106,14 @@ describe('Raffle', function () {
 
   it('🙆‍♂️  Only contract owner can start raffle', async function () {
     const items = [[ticketsAddress, '0', [[voucherAddress, '0', '5']]]]
-    const raffleEndTime = Number((Date.now() / 1000).toFixed()) + 86400
-    await truffleAssert.reverts(bobRaffle.startRaffle(raffleEndTime, items), 'Raffle: Must be contract owner')
+    const raffleDuration = 86400
+    await truffleAssert.reverts(bobRaffle.startRaffle(raffleDuration, items), 'Raffle: Must be contract owner')
   })
 
-  it('🙅‍♀️  Cannot start a raffle before now', async function () {
+  it('🙅‍♀️  Cannot start a raffle that goes less than 1 hour', async function () {
     const items = [[ticketsAddress, '0', [[voucherAddress, '0', '5']]]]
-    const raffleEndTime = Number((Date.now() / 1000).toFixed()) - 86400
-    await truffleAssert.reverts(raffle.startRaffle(raffleEndTime, items), 'Raffle: _raffleEnd must be greater than 1 hour')
+    const raffleDuration = 3599
+    await truffleAssert.reverts(raffle.startRaffle(raffleDuration, items), 'Raffle: _raffleDuration must be greater than 1 hour')
   })
 
   it('🙆‍♂️  Should start raffle', async function () {
@@ -126,8 +127,8 @@ describe('Raffle', function () {
     await vouchers.setApprovalForAll(raffle.address, true)
     await tickets.setApprovalForAll(raffle.address, true)
 
-    const raffleEndTime = Number((Date.now() / 1000).toFixed()) + 86400
-    await raffle.startRaffle(raffleEndTime, items)
+    const raffleDuration = 86400
+    await raffle.startRaffle(raffleDuration, items)
     const info = await raffle.raffleInfo('0')
 
     const raffleEnd = Number(info.raffleEnd_)
@@ -364,8 +365,8 @@ describe('Raffle', function () {
       [ticketsAddress, '4', [[voucherAddress, '9', '5']]],
       [ticketsAddress, '5', [[voucherAddress, '10', '5']]]
     ]
-    const raffleEndTime = Number((Date.now() / 1000).toFixed()) + 86400 * 2
-    await raffle.startRaffle(raffleEndTime, items)
+    const raffleDuration = 86400 * 2
+    await raffle.startRaffle(raffleDuration, items)
     const info = await raffle.raffleInfo('1')
 
     const raffleEnd = Number(info.raffleEnd_)
