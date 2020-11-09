@@ -93,7 +93,7 @@ contract RafflesContract is IERC173, IERC165 {
         s.contractOwner = _contractOwner;
         im_vrfCoordinator = _vrfCoordinator;
         im_link = LinkTokenInterface(_link);
-        im_keyHash = _keyHash; //0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4; // Ropsten details
+        im_keyHash = _keyHash; //0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4;
         // 0.1 LINK
         s.fee = 1e17;
 
@@ -205,7 +205,6 @@ contract RafflesContract is IERC173, IERC165 {
     // rawFulfillRandomness is called by VRFCoordinator when it receives a valid VRFproof.
     /**
      * @notice Callback function used by VRF Coordinator
-     * @dev Important! Add a modifier to only allow this function to be called by the VRFCoordinator
      * @dev This is where you do something with randomness!
      * @dev The VRF Coordinator will only send this function verified responses.
      * @dev The VRF Coordinator will not pass randomness that could not be verified.
@@ -406,7 +405,7 @@ contract RafflesContract is IERC173, IERC165 {
         }
     }
 
-    struct entrantStatsIO {
+    struct EntrantStatsIO {
         address ticketAddress; // ERC1155 contract address
         uint256 ticketId; // ERC1155 type id
         uint256 ticketQuantity; // Number of ERC1155 tokens
@@ -417,10 +416,10 @@ contract RafflesContract is IERC173, IERC165 {
      * @param _raffleId Which raffle to get ticket stats about
      * @param _entrant Who to get stats about
      */
-    function entrantStats(uint256 _raffleId, address _entrant) external view returns (entrantStatsIO[] memory entrantstats_) {
+    function entrantStats(uint256 _raffleId, address _entrant) external view returns (EntrantStatsIO[] memory entrantstats_) {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
-        entrantstats_ = new entrantStatsIO[](raffle.userEntries[_entrant].length);
+        entrantstats_ = new EntrantStatsIO[](raffle.userEntries[_entrant].length);
         for (uint256 i; i < raffle.userEntries[_entrant].length; i++) {
             UserEntry memory userEntry = raffle.userEntries[_entrant][i];
             RaffleItem storage raffleItem = raffle.raffleItems[userEntry.raffleItemIndex];
@@ -433,12 +432,13 @@ contract RafflesContract is IERC173, IERC165 {
     struct TicketStatsIO {
         address ticketAddress; // ERC1155 contract address
         uint256 ticketId; // ERC1155 type id
-        uint256 numberOfEntrants; // number of unique addresses that ticketd
+        uint256 numberOfEntrants; // number of unique addresses that entered tickets
         uint256 totalEntered; // Number of ERC1155 tokens
     }
 
     /**
      * @notice Returns what tickets have been entered, by how many addresses, and how many ERC1155 tickets entered
+     * @dev It is possible for this function to run out of gas when called off-chain if there are very many users (Infura has gas limit for off-chain calls)
      * @param _raffleId Which raffle to get info about
      */
     function ticketStats(uint256 _raffleId) external view returns (TicketStatsIO[] memory ticketStats_) {
@@ -512,6 +512,7 @@ contract RafflesContract is IERC173, IERC165 {
         }
     }
 
+    // Get the unique addresses of entrants in a raffle
     function getEntrants(uint256 _raffleId) external view returns (address[] memory entrants_) {
         require(_raffleId < s.raffles.length, "Raffle: Raffle does not exist");
         Raffle storage raffle = s.raffles[_raffleId];
@@ -535,6 +536,7 @@ contract RafflesContract is IERC173, IERC165 {
 
     /**
      * @notice Get all winning tickets and their prizes
+     * @dev This can run out of gas when called off-chain because Infura has a gas limit
      * @param _raffleId Which raffle
      */
     function winners(uint256 _raffleId) external view returns (PrizeWinnerIO[] memory winners_) {
@@ -641,6 +643,9 @@ contract RafflesContract is IERC173, IERC165 {
      * @dev All items in _wins are verified as actually won by the address that calls this function and reverts otherwise.
      * @dev Each entrant address can only claim prizes once, so be sure to include all entries and prizes won.
      * @dev Prizes are transfered to the address that calls this function.
+     * @dev Due to the possibility that an entrant does not claim all the prizes he/she won or the gas cost is too high,
+     * the contractOwner can claim prizes for an entrant. This needs to be used with care so that contractOwner does not
+     * accidentally claim prizes for an entrant that have already been claimed for or by the entrant.
      * @param _entrant The entrant that won the prizes
      * @param _raffleId The raffle that prizes were won in.
      * @param _wins Contains only winning entries and prizes that were won.
