@@ -3,6 +3,7 @@ require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-ethers')
 require('hardhat-gas-reporter')
 require('hardhat-contract-sizer')
+require('@nomiclabs/hardhat-etherscan')
 
 require('dotenv').config()
 
@@ -21,6 +22,11 @@ task('accounts', 'Prints the list of accounts', async () => {
 // defaultNetwork, networks, solc, and paths.
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
+  etherscan: {
+    // Your API key for Etherscan
+    // Obtain one at https://etherscan.io/
+    apiKey: process.env.ETHERSCAN_APIKEY
+  },
   contractSizer: {
     alphaSort: false,
     runOnCompile: false,
