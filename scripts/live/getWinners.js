@@ -11,7 +11,7 @@ function getWins (entrantAddress, winners) {
     if (winner.entrant === entrantAddress) {
       const winningPrizeNumbers = [...winner.winningPrizeNumbers]
       winningPrizeNumbers.reverse()
-      if (winner.userEntryIndex === lastValue) {
+      if (Number(winner.userEntryIndex) === lastValue) {
         prizeWin.unshift([winner.raffleItemPrizeIndex, winningPrizeNumbers])
       } else {
         prizeWin = [[winner.raffleItemPrizeIndex, winningPrizeNumbers]]
@@ -20,7 +20,7 @@ function getWins (entrantAddress, winners) {
           prizeWin
         ])
       }
-      lastValue = winner.userEntryIndex
+      lastValue = Number(winner.userEntryIndex)
     }
   }
   return wins
@@ -68,7 +68,7 @@ async function getWinners (raffleId, entrant, raffleContract) {
           raffleItemIndex: raffleItemIndex,
           raffleItemPrizeIndex: raffleItemPrizeIndex,
           winningPrizeNumbers: winningPrizeNumbers,
-          prizeId: prizeId
+          prizeId: prizeId.toString()
         })
       }
     }
@@ -149,14 +149,19 @@ exports.getWinners = getWinners
 //   // console.log(JSON.stringify(raffleInfo))
 //   fs.writeFileSync('./raffleInfo.js', JSON.stringify(raffleInfo))
 
-// async function main () {
-//   // const accounts = await ethers.getSigners()
-//   // const account = await accounts[0].getAddress()
-//   // const account = '0x0b22380B7c423470979AC3eD7d3c07696773dEa1'
-//   // const account = '0x5f4c72567e8fC2Dad577532e4f1339EdBD161DC7'
-//   // const account = '0x87fC1313880d579039aC48dB8B25428ed5F33C4a'
+async function main () {
+  // const accounts = await ethers.getSigners()
+  // const account = await accounts[0].getAddress()
+  // const account = '0x0b22380B7c423470979AC3eD7d3c07696773dEa1'
+  // const account = '0x5f4c72567e8fC2Dad577532e4f1339EdBD161DC7'
+  const account = '0x2c123fc5C27888571CD525e8ae9b0c5ff848386D'
 
-//   const rafflesContract = await ethers.getContractAt('RafflesContract', '0x144d196Bf99a4EcA33aFE036Da577d7D66583DB6')
+  const rafflesContract = await ethers.getContractAt('RafflesContract', '0x144d196Bf99a4EcA33aFE036Da577d7D66583DB6')
+  const winners1 = await getWinners('0', account, rafflesContract)
+  console.log(JSON.stringify(winners1))
+  //const winners2 = await rafflesContract['winners(uint256,address[])']('0', [account])
+  //console.log(winners2)
+
 //   const entrants = await rafflesContract.getEntrants('0')
 
 //   let totalPeople = 0
@@ -197,13 +202,13 @@ exports.getWinners = getWinners
 //   // const userEntries = await getUserEntries('0', rafflesContract)
 //   console.log('totalPeople:' + totalPeople)
 //   console.log('skipped people:' + skippedPeople)
-// }
+}
 
-// if (require.main === module) {
-//   main()
-//     .then(() => process.exit(0))
-//     .catch(error => {
-//       console.error(error)
-//       process.exit(1)
-//     })
-// }
+if (require.main === module) {
+  main()
+    .then(() => process.exit(0))
+    .catch(error => {
+      console.error(error)
+      process.exit(1)
+    })
+}
