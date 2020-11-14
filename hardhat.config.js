@@ -33,7 +33,7 @@ module.exports = {
     disambiguatePaths: false
   },
   gasReporter: {
-    enabled: true,
+    enabled: false,
     currency: 'USD',
     gasPrice: 21
   },
