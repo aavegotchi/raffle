@@ -2,6 +2,11 @@
 pragma solidity 0.7.4;
 pragma experimental ABIEncoderV2;
 
+/*************/
+/* Aavegotchi raffles contract
+/* Authors: Nick Mudge and 
+/*************/
+
 import "./interfaces/IERC1155.sol";
 import "./chainlink/LinkTokenInterface.sol";
 import "./interfaces/IERC173.sol";

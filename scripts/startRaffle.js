@@ -18,12 +18,20 @@ async function main () {
   let linkAddress
   let keyHash
   let fee
+  let time
   if (hre.network.name === 'kovan') {
     vrfCoordinator = '0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9'
     linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088'
     keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
     fee = ethers.utils.parseEther('0.1')
-    prizeAddress = '0x0f0F109c211DAa45C8fD33e20bc8d3C45bE10b15'
+    // prizeAddress = '0x0f0F109c211DAa45C8fD33e20bc8d3C45bE10b15'
+
+    const VouchersContract = await ethers.getContractFactory('VouchersContract')
+    wearableVouchersContract = await VouchersContract.deploy(account)
+    console.log('Deployed WearableVouchersContract:' + wearableVouchersContract.address)
+    prizeAddress = wearableVouchersContract.address
+    const tx = await wearableVouchersContract.createVoucherTypes(account, [1000, 1000, 1000, 500, 500, 500, 300, 300, 300, 150, 150, 150, 50, 50, 50, 5, 5], '0x')
+    await tx.wait()
 
     ;[aavePrizesAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash, fee)
     // rafflesAddress = '0x45944862b6274ea45fbc6063996112d41e4c2e49'
@@ -38,6 +46,7 @@ async function main () {
     wearableVouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
     aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
+    time = 3600 /* one hour */ * 8
   } else if (hre.network.name === 'mainnet') {
     vrfCoordinator = '0xf0d54349aDdcf704F77AE15b96510dEA15cb7952'
     linkAddress = '0x514910771AF9Ca656af840dff83E8264EcF986CA'
@@ -50,6 +59,7 @@ async function main () {
     wearableVouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
     aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
+    time = 3600 /* one hour */ * 72
   } else if (hre.network.name === 'hardhat') {
     vrfCoordinator = account // '0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9'
     const LinkTokenMock = await ethers.getContractFactory('LinkTokenMock')
@@ -73,6 +83,7 @@ async function main () {
     wearableVouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
     aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
+    time = 3600 /* one hour */ * 72
   } else {
     throw Error('No network settings for ' + hre.network.name)
   }
@@ -190,6 +201,7 @@ async function main () {
   console.log('Vouchers create gas used: ', receipt.gasUsed.toString())
   totalGasUsed = receipt.gasUsed
 
+  console.log('Create new aave prize types')
   tx = await aavePrizesContract.createVoucherTypes(account, [200, 20, 2], '0x')
   receipt = await tx.wait()
   console.log('AavePrizes create gas used: ', receipt.gasUsed.toString())
@@ -223,7 +235,7 @@ async function main () {
   // const threeDays = 86400 * 3
   // console.log(JSON.stringify(raffleItems, null, 2))
   // const time = 3660 // one hour an one minute
-  const time = 3600 /* one hour */ * 72
+
   console.log('Execute startRaffle function')
   // console.log(raffleItems)
   tx = await rafflesContract.startRaffle(time, raffleItems)
