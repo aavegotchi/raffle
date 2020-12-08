@@ -2,29 +2,7 @@
 
 const { expect } = require('chai')
 const truffleAssert = require('truffle-assertions')
-
-function getWins (entrantAddress, winners) {
-  const wins = []
-  let lastValue = -1
-  let prizeWin
-  for (const winner of winners) {
-    if (winner.entrant === entrantAddress) {
-      const winningPrizeNumbers = [...winner.winningPrizeNumbers]
-      winningPrizeNumbers.reverse()
-      if (winner.entryIndex.eq(lastValue)) {
-        prizeWin.unshift([winner.raffleItemPrizeIndex, winningPrizeNumbers])
-      } else {
-        prizeWin = [[winner.raffleItemPrizeIndex, winningPrizeNumbers]]
-        wins.unshift([
-          winner.entryIndex,
-          prizeWin
-        ])
-      }
-      lastValue = winner.entryIndex
-    }
-  }
-  return wins
-}
+const { getWinsInfo, getWins } = require('../scripts/getWins.js')
 
 describe('Raffle', function () {
   let account
@@ -262,16 +240,16 @@ describe('Raffle', function () {
     await raffle.rawFulfillRandomness(requestId, randomness)
 
     raffleInfo = await raffle.raffleInfo('1')
-    const winners = await raffle['winners(uint256)']('1')
-    let totalPrizes = 0
+    // const winners = await raffle['winners(uint256)']('1')
+    // let totalPrizes = 0
 
-    winners.forEach((obj) => {
-      totalPrizes = totalPrizes + Number(obj.winningPrizeNumbers.length)
-      expect(obj.claimed).to.equal(false)
-    })
+    // winners.forEach((obj) => {
+    //   totalPrizes = totalPrizes + Number(obj.winningPrizeNumbers.length)
+    //   expect(obj.claimed).to.equal(false)
+    // })
 
     expect(Number(raffleInfo.randomNumber_)).to.greaterThan(1)
-    expect(totalPrizes).to.equal(68)
+    // expect(totalPrizes).to.equal(68)
   })
 
   it('🙆‍♂️  Should not enter tickets after raffle ends', async function () {
@@ -286,13 +264,13 @@ describe('Raffle', function () {
   })
 
   it('🙆‍♂️  Should not claim other person\'s prizes', async function () {
-    const winners = await raffle['winners(uint256)']('1')
-    await truffleAssert.reverts(bobRaffle.claimPrize('1', bobAddress, getWins(account, winners)), 'Raffle: Did not win prize')
+    const winsInfo = await getWinsInfo(raffle, 1, account)
+    await truffleAssert.reverts(bobRaffle.claimPrize('1', bobAddress, getWins(winsInfo)), 'Raffle: Did not win prize')
   })
 
   it('🙆‍♂️  Should not claim same prizes twice', async function () {
-    const winners = await raffle['winners(uint256)']('1')
-    const casperWins = getWins(casperAddress, winners)
+    const winsInfo = await getWinsInfo(raffle, 1, casperAddress)
+    const casperWins = getWins(winsInfo)
     let wins = JSON.parse(JSON.stringify(casperWins))
     let value = wins[1][1][1][1]
     value.splice(value.length, 0, value[0])
@@ -314,21 +292,19 @@ describe('Raffle', function () {
   })
 
   it('🙆‍♂️  Should claim prizes', async function () {
-    let winners = await raffle['winners(uint256)']('1')
-
     // console.log(JSON.stringify(getWins(account, winners), null, 4))
     // console.log('--------')
     // console.log(JSON.stringify(getWins(bobAddress, winners), null, 4))
     // console.log('--------')
     // console.log(JSON.stringify(getWins(casperAddress, winners), null, 4))
 
-    await raffle.claimPrize('1', account, getWins(account, winners))
-    await bobRaffle.claimPrize('1', bobAddress, getWins(bobAddress, winners))
-    await casperRaffle.claimPrize('1', casperAddress, getWins(casperAddress, winners))
-    winners = await raffle['winners(uint256)']('1')
-    winners.forEach((obj) => {
-      expect(obj.claimed).to.equal(true)
-    })
+    await raffle.claimPrize('1', account, getWins(await getWinsInfo(raffle, 1, account)))
+    await bobRaffle.claimPrize('1', bobAddress, getWins(await getWinsInfo(raffle, 1, bobAddress)))
+    await casperRaffle.claimPrize('1', casperAddress, getWins(await getWinsInfo(raffle, 1, casperAddress)))
+    // winners = await raffle['winners(uint256)']('1')
+    // winners.forEach((obj) => {
+    //   expect(obj.claimed).to.equal(true)
+    // })
     let totalPrizes = 0
     for (let i = 0; i < 8; i++) {
       const balance = await vouchers.balanceOf(account, i)
@@ -347,8 +323,7 @@ describe('Raffle', function () {
   })
 
   it('🙅‍♀️  Cannot claim again', async function () {
-    const winners = await raffle['winners(uint256)']('1')
-    await truffleAssert.reverts(bobRaffle.claimPrize('1', bobAddress, getWins(bobAddress, winners)), 'Raffles: Entry prizes have already been claimed')
+    await truffleAssert.reverts(bobRaffle.claimPrize('1', bobAddress, getWins(await getWinsInfo(raffle, 1, bobAddress))), 'Raffles: Entry prizes have already been claimed')
   })
 
   it('🙅‍♀️  Should not have any open raffles', async function () {

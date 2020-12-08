@@ -3,11 +3,7 @@
 const { expect } = require('chai')
 const truffleAssert = require('truffle-assertions')
 const { startRaffle } = require('../scripts/startRaffle.js')
-
-function getWins (entrantAddress, winners) {
-  const wins = []
-  return wins
-}
+const { getWinsInfo, getWins } = require('../scripts/getWins.js')
 
 describe('Raffle', function () {
   let account
@@ -144,83 +140,30 @@ describe('Raffle', function () {
     raffleInfo = await rafflesContract.raffleInfo('1')
   })
 
-  async function getWinsInfo (raffleId, entrant) {
-    const [raffleEnd, raffleItems, randomNumber] = await rafflesContract.raffleInfo(raffleId)
-    const entries = await rafflesContract.getEntries(raffleId, entrant)
-    const winsInfo = []
-    for (const [entryIndex, entry] of entries.entries()) {
-      const raffleItem = raffleItems[entry.raffleItemIndex]
-      const raffleItemPrizes = raffleItem.raffleItemPrizes
-      for (const [raffleItemPrizeIndex, raffleItemPrize] of raffleItemPrizes.entries()) {
-        const winningPrizeNumbers = []
-        for (let prizeNumber = 0; prizeNumber < raffleItemPrize.prizeQuantity; prizeNumber++) {
-          let ticketNumber = ethers.utils.solidityKeccak256(['uint256', 'uint24', 'uint256', 'uint256'], [randomNumber, entry.raffleItemIndex, raffleItemPrizeIndex, prizeNumber])
-          ticketNumber = ethers.BigNumber.from(ticketNumber).mod(raffleItem.totalEntered)
-          if (ticketNumber.gte(entry.rangeStart) && ticketNumber.lt(entry.rangeEnd)) {
-            winningPrizeNumbers.push(prizeNumber)
-          }
-        }
-        if (winningPrizeNumbers.length > 0) {
-          winsInfo.push({
-            entrant: entrant,
-            claimed: false,
-            entryIndex: entryIndex,
-            raffleItemIndex: entry.raffleItemIndex,
-            raffleItemPrizeIndex: raffleItemPrizeIndex,
-            winningPrizeNumbers: winningPrizeNumbers,
-            prizeId: raffleItemPrize.prizeId.toString()
-          })
-        }
-      }
-    }
-    return winsInfo
-  }
-
-  function getWins (winsInfo) {
-    const wins = []
-    let lastValue = -1
-    let prizeWin
-    for (const winInfo of winsInfo) {
-      const winningPrizeNumbers = [...winInfo.winningPrizeNumbers]
-      winningPrizeNumbers.reverse()
-      if (winInfo.entryIndex === lastValue) {
-        prizeWin.unshift([winInfo.raffleItemPrizeIndex, winningPrizeNumbers])
-      } else {
-        prizeWin = [[winInfo.raffleItemPrizeIndex, winningPrizeNumbers]]
-        wins.unshift([
-          winInfo.entryIndex,
-          prizeWin
-        ])
-      }
-      lastValue = winInfo.entryIndex
-    }
-    return wins
-  }
-
-  function formatWinners (winners) {
-    const w = []
-    for (const winner of winners) {
-      const nums = []
-      for (const num of winner.winningPrizeNumbers) {
-        nums.push(num.toString())
-      }
-      w.push({
-        entrant: winner.entrant,
-        claimed: winner.claimed,
-        entryIndex: winner.entryIndex.toString(),
-        raffleItemIndex: winner.raffleItemIndex.toString(),
-        raffleItemPrizeIndex: winner.raffleItemPrizeIndex.toString(),
-        winningPrizeNumbers: nums,
-        prizeId: winner.prizeId.toString()
-      })
-    }
-    return w
-  }
+  // function formatWinners (winners) {
+  //   const w = []
+  //   for (const winner of winners) {
+  //     const nums = []
+  //     for (const num of winner.winningPrizeNumbers) {
+  //       nums.push(num.toString())
+  //     }
+  //     w.push({
+  //       entrant: winner.entrant,
+  //       claimed: winner.claimed,
+  //       entryIndex: winner.entryIndex.toString(),
+  //       raffleItemIndex: winner.raffleItemIndex.toString(),
+  //       raffleItemPrizeIndex: winner.raffleItemPrizeIndex.toString(),
+  //       winningPrizeNumbers: nums,
+  //       prizeId: winner.prizeId.toString()
+  //     })
+  //   }
+  //   return w
+  // }
 
   it('🙆‍♂️  Should get wins for each person and claim them', async function () {
     let totalPrizes = 0
     console.log('----------------------------------------------------')
-    let winsInfo = await getWinsInfo(1, account)
+    let winsInfo = await getWinsInfo(rafflesContract, 1, account)
     // console.log(winsInfo)
     // const wins2Info = await rafflesContract['winners(uint256,address[])']('1', [account])
     // console.log('Compare to contract version: ---------------||||||||||||||||||||||')
@@ -237,7 +180,7 @@ describe('Raffle', function () {
     }
     console.log('Person won: ' + won)
     console.log('----------------------------------------------------')
-    winsInfo = await getWinsInfo(1, bobAddress)
+    winsInfo = await getWinsInfo(rafflesContract, 1, bobAddress)
     // console.log(winsInfo)
     wins = getWins(winsInfo)
     await bobRafflesContract.claimPrize(1, bobAddress, wins)
@@ -249,7 +192,7 @@ describe('Raffle', function () {
     }
     console.log('Person won: ' + won)
     console.log('----------------------------------------------------')
-    winsInfo = await getWinsInfo(1, casperAddress)
+    winsInfo = await getWinsInfo(rafflesContract, 1, casperAddress)
     // console.log(winsInfo)
     wins = getWins(winsInfo)
     // console.log(wins)
