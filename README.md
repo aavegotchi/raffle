@@ -13,6 +13,8 @@ The `getWins` Javascript function in the `test/test.js` file is used to process 
 ### Mainnet Addresses
 - RaffleContract: 0x144d196Bf99a4EcA33aFE036Da577d7D66583DB6
 - VoucherContract: 0xe54891774EED9277236bac10d82788aee0Aed313
+- Second RaffleContract: 0xAFFF04FbFe54Cc985E25493A8F9D7114012D6d6F
+- Aave Prize/Voucher Contract: 0xa983b3d938eEDf79783CE88ed227A47b6861A3e9
 
 
 Kovan addresses

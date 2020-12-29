@@ -163,13 +163,17 @@ describe('Raffle', function () {
   it('🙆‍♂️  Should get wins for each person and claim them', async function () {
     let totalPrizes = 0
     console.log('----------------------------------------------------')
+    let t1 = new Date()
     let winsInfo = await getWinsInfo(rafflesContract, 1, account)
+    // console.log('getWinsInfo call:' + (new Date() - t1).toString())
     // console.log(winsInfo)
     // const wins2Info = await rafflesContract['winners(uint256,address[])']('1', [account])
     // console.log('Compare to contract version: ---------------||||||||||||||||||||||')
     // console.log(JSON.stringify(wins2Info, null, 2))
     // console.log(formatWinners(wins2Info))
+    t1 = new Date()
     let wins = getWins(winsInfo)
+    // console.log('getWins call:' + (new Date() - t1).toString())
     // console.log(JSON.stringify(wins, null, 4))
     // console.log(wins)
     await rafflesContract.claimPrize(1, account, wins)
@@ -180,9 +184,13 @@ describe('Raffle', function () {
     }
     console.log('Person won: ' + won)
     console.log('----------------------------------------------------')
+    t1 = new Date()
     winsInfo = await getWinsInfo(rafflesContract, 1, bobAddress)
+    // console.log('getWinsInfo call:' + (new Date() - t1).toString())
     // console.log(winsInfo)
+    t1 = new Date()
     wins = getWins(winsInfo)
+    // console.log('getWins call:' + (new Date() - t1).toString())
     await bobRafflesContract.claimPrize(1, bobAddress, wins)
     // console.log(wins)
     won = 0
@@ -192,9 +200,13 @@ describe('Raffle', function () {
     }
     console.log('Person won: ' + won)
     console.log('----------------------------------------------------')
+    t1 = new Date()
     winsInfo = await getWinsInfo(rafflesContract, 1, casperAddress)
+    // console.log('getWinsInfo call:' + (new Date() - t1).toString())
     // console.log(winsInfo)
+    t1 = new Date()
     wins = getWins(winsInfo)
+    // console.log('getWins call:' + (new Date() - t1).toString())
     // console.log(wins)
     await casperRafflesContract.claimPrize(1, casperAddress, wins)
     won = 0
@@ -217,5 +229,5 @@ describe('Raffle', function () {
 
     // expect(Number(raffleInfo.randomNumber_)).to.greaterThan(1)
     // expect(totalPrizes).to.equal(68)
-  }).timeout(40000)
+  }).timeout(50000)
 })

@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 /*************/
 /* Aavegotchi raffles contract
-/* Authors: Nick Mudge and 
+/* Authors: Nick Mudge (mudgen) and Daniel Mathieu (coderdan)
 /*************/
 
 import "./interfaces/IERC1155.sol";

@@ -8,7 +8,7 @@ async function main () {
   let ticketAddress
   let ticketsContract
   let prizeAddress
-  let aavePrizesAddress
+  // let aavePrizesAddress
   let rafflesAddress
   let wearableVouchersContract
   let aavePrizesContract
@@ -44,7 +44,7 @@ async function main () {
     // Kovan Key Hash: 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4
     ticketAddress = '0xA4fF399Aa1BB21aBdd3FC689f46CCE0729d58DEd'
     wearableVouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
-    aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
+    // aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
     time = 3600 /* one hour */ * 8
   } else if (hre.network.name === 'mainnet') {
@@ -54,10 +54,11 @@ async function main () {
     fee = ethers.utils.parseEther('2')
     prizeAddress = '0xe54891774EED9277236bac10d82788aee0Aed313'
 
-    ;[aavePrizesAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash, fee)
+    // ;[aavePrizesAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash, fee)
+    rafflesAddress = '0xAFFF04FbFe54Cc985E25493A8F9D7114012D6d6F'
     ticketAddress = '0x93ea6ec350ace7473f7694d43dec2726a515e31a'
     wearableVouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
-    aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
+    // aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
     time = 3600 /* one hour */ * 72
   } else if (hre.network.name === 'hardhat') {
@@ -73,75 +74,30 @@ async function main () {
     wearableVouchersContract = await VouchersContract.deploy(account)
     console.log('Deployed WearableVouchersContract:' + wearableVouchersContract.address)
     prizeAddress = wearableVouchersContract.address
-    const tx = await wearableVouchersContract.createVoucherTypes(account, [1000, 1000, 1000, 500, 500, 500, 300, 300, 300, 150, 150, 150, 50, 50, 50, 5, 5], '0x')
+    const quantities = [1000, 1000, 1000, 500, 500, 500, 300, 300, 300, 150, 150, 150, 50, 50, 50, 5, 5, 1000, 1000, 1000, 500, 500, 500, 250, 250, 250, 100, 100, 100, 50, 50, 50, 5, 5, 5]
+    let tx = await wearableVouchersContract.createVoucherTypes(account, quantities, '0x')
     await tx.wait()
 
-    ;[aavePrizesAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash, fee)
+    rafflesAddress = await deployContracts(vrfCoordinator, linkAddress, keyHash, fee)
 
     ticketsContract = await VouchersContract.deploy(account)
     ticketAddress = ticketsContract.address
-    wearableVouchersContract = await ethers.getContractAt('VouchersContract', prizeAddress)
-    aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
+    // aavePrizesContract = await ethers.getContractAt('VouchersContract', aavePrizesAddress)
     rafflesContract = await ethers.getContractAt('RafflesContract', rafflesAddress)
     time = 3600 /* one hour */ * 72
+
+    console.log('Approve vouchers contract')
+    tx = await wearableVouchersContract.setApprovalForAll(rafflesContract.address, true)
+    const receipt = await tx.wait()
+    console.log('Set approval gas used: ', receipt.gasUsed.toString())
   } else {
     throw Error('No network settings for ' + hre.network.name)
   }
 
   const prizeQuantitys = []
   const raffleItems = []
-  let prizeId = 17
+  let prizeId = 35
   let prizeQuantity
-  // for (let ticketId = 0; ticketId < 6; ticketId++) {
-  //   if (ticketId === 0) {
-  //     prizeQuantity = 10
-  //   } else if (ticketId === 1) {
-  //     prizeQuantity = 5
-  //   } else if (ticketId === 2) {
-  //     prizeQuantity = 2
-  //   } else if (ticketId === 3) {
-  //     prizeQuantity = 1
-  //   } else if (ticketId === 4) {
-  //     prizeQuantity = 1
-  //   } else if (ticketId === 5) {
-  //     prizeQuantity = 1
-  //   }
-  //   const jLength = 3
-  //   const prizeItems = []
-  //   raffleItems.push({
-  //     ticketAddress: ticketAddress,
-  //     ticketId: ticketId,
-  //     raffleItemPrizes: prizeItems
-  //   })
-  //   for (let j = 0; j < jLength; j++) {
-  //     prizeQuantitys.push(prizeQuantity)
-  //     prizeItems.push({
-  //       prizeAddress: prizeAddress,
-  //       prizeId: prizeId,
-  //       prizeQuantity: prizeQuantity
-  //     })
-  //     prizeId++
-  //   }
-  //   if (ticketId === 3) {
-  //     prizeItems.push({
-  //       prizeAddress: aavePrizesAddress,
-  //       prizeId: 0,
-  //       prizeQuantity: 200
-  //     })
-  //   } else if (ticketId === 4) {
-  //     prizeItems.push({
-  //       prizeAddress: aavePrizesAddress,
-  //       prizeId: 1,
-  //       prizeQuantity: 20
-  //     })
-  //   } else if (ticketId === 5) {
-  //     prizeItems.push({
-  //       prizeAddress: aavePrizesAddress,
-  //       prizeId: 2,
-  //       prizeQuantity: 2
-  //     })
-  //   }
-  // }
   for (let ticketId = 0; ticketId < 6; ticketId++) {
     if (ticketId === 0) {
       prizeQuantity = 1000
@@ -156,7 +112,12 @@ async function main () {
     } else if (ticketId === 5) {
       prizeQuantity = 5
     }
-    const jLength = 3
+    let jLength
+    if (ticketId === 4) {
+      jLength = 4
+    } else {
+      jLength = 3
+    }
     const prizeItems = []
     raffleItems.push({
       ticketAddress: ticketAddress,
@@ -172,25 +133,6 @@ async function main () {
       })
       prizeId++
     }
-    if (ticketId === 3) {
-      prizeItems.push({
-        prizeAddress: aavePrizesAddress,
-        prizeId: 0,
-        prizeQuantity: 200
-      })
-    } else if (ticketId === 4) {
-      prizeItems.push({
-        prizeAddress: aavePrizesAddress,
-        prizeId: 1,
-        prizeQuantity: 20
-      })
-    } else if (ticketId === 5) {
-      prizeItems.push({
-        prizeAddress: aavePrizesAddress,
-        prizeId: 2,
-        prizeQuantity: 2
-      })
-    }
   }
   let tx
   let totalGasUsed = 0
@@ -201,11 +143,11 @@ async function main () {
   console.log('Vouchers create gas used: ', receipt.gasUsed.toString())
   totalGasUsed = receipt.gasUsed
 
-  console.log('Create new aave prize types')
-  tx = await aavePrizesContract.createVoucherTypes(account, [200, 20, 2], '0x')
-  receipt = await tx.wait()
-  console.log('AavePrizes create gas used: ', receipt.gasUsed.toString())
-  totalGasUsed = receipt.gasUsed
+  // console.log('Create new aave prize types')
+  // tx = await aavePrizesContract.createVoucherTypes(account, [200, 20, 2], '0x')
+  // receipt = await tx.wait()
+  // console.log('AavePrizes create gas used: ', receipt.gasUsed.toString())
+  // totalGasUsed = receipt.gasUsed
 
   // console.log(prizeQuantitys)
 
@@ -214,17 +156,17 @@ async function main () {
 
   // const ids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
   // await vouchersContract.mintVouchers(account, ids, prizeQuantitys, '0x')
-  console.log('Approve rafflesContract for wearable vouchers')
-  tx = await wearableVouchersContract.setApprovalForAll(rafflesContract.address, true)
-  receipt = await tx.wait()
-  console.log('Set approval gas used: ', receipt.gasUsed.toString())
-  totalGasUsed = totalGasUsed.add(receipt.gasUsed)
+  // console.log('Approve rafflesContract for wearable vouchers')
+  // tx = await wearableVouchersContract.setApprovalForAll(rafflesContract.address, true)
+  // receipt = await tx.wait()
+  // console.log('Set approval gas used: ', receipt.gasUsed.toString())
+  // totalGasUsed = totalGasUsed.add(receipt.gasUsed)
 
-  console.log('Approve rafflesContract for aave prizes')
-  tx = await aavePrizesContract.setApprovalForAll(rafflesContract.address, true)
-  receipt = await tx.wait()
-  console.log('Set approval gas used: ', receipt.gasUsed.toString())
-  totalGasUsed = totalGasUsed.add(receipt.gasUsed)
+  // console.log('Approve rafflesContract for aave prizes')
+  // tx = await aavePrizesContract.setApprovalForAll(rafflesContract.address, true)
+  // receipt = await tx.wait()
+  // console.log('Set approval gas used: ', receipt.gasUsed.toString())
+  // totalGasUsed = totalGasUsed.add(receipt.gasUsed)
 
   // console.log('Approved raffleContract to transfer vouchers')
   // const now = new Date()
