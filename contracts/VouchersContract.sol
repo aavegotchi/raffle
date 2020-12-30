@@ -30,7 +30,7 @@ contract VouchersContract is IERC1155, IERC173, IERC165 {
 
     constructor(address _contractOwner) {
         s.contractOwner = _contractOwner;
-        s.vouchersBaseUri = "https://aavegotchi.com/metadata/aave/";
+        s.vouchersBaseUri = "https://aavegotchi.com/metadata/vouchers/";
 
         // adding ERC165 data
         s.supportedInterfaces[type(IERC165).interfaceId] = true;
