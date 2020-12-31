@@ -2,7 +2,7 @@
 
 const { deployContracts } = require('./deploy.js')
 
-async function main() {
+async function main () {
   const accounts = await ethers.getSigners()
   const account = await accounts[0].getAddress()
   let ticketAddress
@@ -20,19 +20,19 @@ async function main() {
   let fee
   let time
   if (hre.network.name === 'kovan') {
-    vrfCoordinator = '0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9'
-    linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088'
-    keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
-    fee = ethers.utils.parseEther('0.1')
-    let rafflesAddress = "0xaAF48D4798e987DAE6f315C0d28bE88aBeF1e807"
-    let prizeAddress = "0x9d038aed3BEDbb143B4F3414Af6119231b77ACFC"
+    // vrfCoordinator = '0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9'
+    // linkAddress = '0xa36085F69e2889c224210F603D836748e7dC0088'
+    // keyHash = '0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4'
+    // fee = ethers.utils.parseEther('0.1')
+    rafflesAddress = '0xaAF48D4798e987DAE6f315C0d28bE88aBeF1e807'
+    prizeAddress = '0x9d038aed3BEDbb143B4F3414Af6119231b77ACFC'
     // prizeAddress = '0x0f0F109c211DAa45C8fD33e20bc8d3C45bE10b15'
 
-    //const VouchersContract = await ethers.getContractFactory('VouchersContract')
+    // const VouchersContract = await ethers.getContractFactory('VouchersContract')
     // wearableVouchersContract = await VouchersContract.deploy(account)
-    //console.log('Deployed WearableVouchersContract:' + wearableVouchersContract.address)
-    //prizeAddress = wearableVouchersContract.address
-    //const tx = await wearableVouchersContract.createVoucherTypes(account, [1000, 1000, 1000, 500, 500, 500, 300, 300, 300, 150, 150, 150, 50, 50, 50, 5, 5], '0x')
+    // console.log('Deployed WearableVouchersContract:' + wearableVouchersContract.address)
+    // prizeAddress = wearableVouchersContract.address
+    // const tx = await wearableVouchersContract.createVoucherTypes(account, [1000, 1000, 1000, 500, 500, 500, 300, 300, 300, 150, 150, 150, 50, 50, 50, 5, 5], '0x')
     // await tx.wait()
 
     //  ;[aavePrizesAddress, rafflesAddress] = await deployContracts(vrfCoordinator, linkAddress, keyHash, fee)
