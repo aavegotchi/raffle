@@ -1,7 +1,5 @@
 /* global ethers hre */
 
-const {deployContracts} = require("./deploy.js");
-
 async function main() {
   const accounts = await ethers.getSigners();
   const account = await accounts[0].getAddress();
@@ -13,24 +11,11 @@ async function main() {
   let time;
   let signer;
 
-  let vrfCoordinator = "0x3d2341ADb2D31f1c5530cDC622016af293177AE0";
-  let linkAddress = "0xb0897686c545045aFc77CF20eC7A532E3120E0F1";
-  let keyHash =
-    "0xf86195cf7690c55907b2b611ebb7343a6f649bff128701cc542f0569e2c549da";
-  let fee = ethers.utils.parseEther("0.0001");
-  initialHauntSize = "10000";
-  const raffleAddress = await deployContracts(
-    vrfCoordinator,
-    linkAddress,
-    keyHash,
-    fee
-  );
-
   //Voucher Address
-  prizeAddress = "0x1F24A6F957b35441A3d1dD659E3bd647aA0e11e5";
+  prizeAddress = "0x055C55C51876b5283F1Fbe2c1F5878B758E63EBE";
 
   //TBD
-  rafflesAddress = raffleAddress; //"0x6c723cac1E35FE29a175b287AE242d424c52c1CE";
+  rafflesAddress = "0x6c723cac1E35FE29a175b287AE242d424c52c1CE";
 
   //Matic GHST Staking
   ticketAddress = "0xA02d547512Bb90002807499F05495Fe9C4C3943f";
@@ -38,7 +23,7 @@ async function main() {
   const testing = ["hardhat"].includes(hre.network.name);
 
   if (testing) {
-    let itemManager = "0x585E06CA576D0565a035301819FD2cfD7104c1E8";
+    let itemManager = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [itemManager],
@@ -51,7 +36,8 @@ async function main() {
     rafflesAddress,
     signer
   );
-  time = 3600 /* one hour */ * 24;
+
+  time = 3600 * 72 /* 72 hours */;
 
   const raffleItems = [];
   const prizeItems = [];
@@ -59,7 +45,7 @@ async function main() {
   prizeItems.push({
     prizeAddress: prizeAddress,
     prizeId: "0",
-    prizeQuantity: 1,
+    prizeQuantity: 3000, //3000 Portal Vouchers
   });
 
   raffleItems.push({
@@ -82,6 +68,12 @@ async function main() {
     prizeAddress,
     signer
   );
+
+  await prizeContract;
+
+  const balance = await prizeContract.balanceOf(account, "0");
+  console.log("Balance:", balance.toString());
+
   tx = await prizeContract.setApprovalForAll(rafflesAddress, true);
   await tx.wait();
 

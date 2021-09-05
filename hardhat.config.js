@@ -58,6 +58,11 @@ module.exports = {
       accounts: [process.env.SECRET],
       gasPrice: 61000000000,
     },
+    matic: {
+      url: process.env.MATIC_URL,
+      accounts: [process.env.SECRET],
+      gasPrice: 61000000000,
+    },
   },
   // This is a sample solc configuration that specifies which version of solc to use
   solidity: {
