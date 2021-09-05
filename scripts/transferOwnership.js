@@ -1,6 +1,10 @@
 //@ts-ignore
 
-const gasPrice = 20000000000;
+const {
+  LedgerSigner,
+} = require("../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
+
+const gasPrice = 50000000000;
 
 async function transferOwner() {
   const accounts = await ethers.getSigners();
@@ -21,10 +25,12 @@ async function transferOwner() {
     });
     signer = await ethers.provider.getSigner(currentOwner);
   } else if (hre.network.name === "matic") {
-    signer = accounts[0];
+    signer = new LedgerSigner(ethers.provider);
   } else {
     throw Error("Incorrect network selected");
   }
+
+  console.log("signer:", signer);
 
   //transfer ownership to multisig
   const transferContract = await ethers.getContractAt(
@@ -36,8 +42,12 @@ async function transferOwner() {
   currentOwner = await transferContract.owner();
   console.log("old owner:", currentOwner);
 
+  return;
+
   const newOwner = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
-  const tx = await transferContract.transferOwnership(newOwner);
+  const tx = await transferContract.transferOwnership(newOwner, {
+    gasPrice: gasPrice,
+  });
   await tx.wait();
 
   currentOwner = await transferContract.owner();
