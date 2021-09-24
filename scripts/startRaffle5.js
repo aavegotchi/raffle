@@ -2,7 +2,7 @@
 
 async function main() {
   const accounts = await ethers.getSigners();
-  const account = await accounts[0].getAddress();
+  // const account = await accounts[0].getAddress();
   let ticketAddress;
 
   let prizeAddress;
@@ -11,9 +11,9 @@ async function main() {
   let time;
   let signer;
 
-  let itemManager = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
+  const itemManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
   //Voucher Address
-  prizeAddress = "0x51cc2818f31A9037040da5F5F623B8aEc24682a9";
+  prizeAddress = "0x86935F11C86623deC8a25696E1C19a8659CbF95d";
 
   //Raffle contract
   rafflesAddress = "0x6c723cac1E35FE29a175b287AE242d424c52c1CE";
@@ -30,7 +30,8 @@ async function main() {
       params: [itemManager],
     });
     signer = await ethers.provider.getSigner(itemManager);
-  } else signer = accounts[0];
+  } else
+    signer = new LedgerSigner(hre.ethers.provider, "hid", "m/44'/60'/2'/0/0");
 
   rafflesContract = await ethers.getContractAt(
     "RafflesContract",
@@ -44,33 +45,54 @@ async function main() {
     signer
   );
 
-  console.log("signer:", signer);
+  time = 3600 * 74 /* 72 hours */;
 
-  let contractBal = await prizeContract.balanceOf(itemManager, "0");
+  const common = [252, 253, 254];
+  const uncommon = [246, 247, 248];
+  const rare = [249, 250, 251];
+  const legendary = [255, 256, 257];
+  const mythical = [261, 262, 263];
+  const godlike = [258, 259, 260];
 
-  console.log("bal:", contractBal.toString());
-  contractBal = await prizeContract.balanceOf(rafflesAddress, "0");
+  const quantities = [1000, 500, 250, 100, 50, 5];
+  const prizes = [common, uncommon, rare, legendary, mythical, godlike];
 
-  console.log("bal:", contractBal.toString());
-
-  time = 3600 * 72 /* 72 hours */;
-
+  const prizeQuantitys = [];
   const raffleItems = [];
-  const prizeItems = [];
 
-  prizeItems.push({
-    prizeAddress: prizeAddress,
-    prizeId: "0",
-    prizeQuantity: 3000, //3000 Portal Vouchers
+  for (let ticketId = 0; ticketId < 6; ticketId++) {
+    const itemIds = prizes[ticketId];
+    const prizeQuantity = quantities[ticketId];
+
+    const prizeItems = [];
+    for (let j = 0; j < itemIds.length; j++) {
+      const prizeId = itemIds[j];
+      prizeQuantitys.push(prizeQuantity);
+      prizeItems.push({
+        prizeAddress: prizeAddress,
+        prizeId: prizeId,
+        prizeQuantity: prizeQuantity,
+      });
+
+      let balance = await prizeContract.balanceOf(itemManager, prizeId);
+      console.log(`Item manager balance of ${prizeId}`, balance.toString());
+
+      balance = await prizeContract.balanceOf(rafflesAddress, prizeId);
+      console.log(`Raffle contract balance of ${prizeId}`, balance.toString());
+    }
+
+    raffleItems.push({
+      ticketAddress: ticketAddress,
+      ticketId: ticketId,
+      raffleItemPrizes: prizeItems,
+    });
+  }
+
+  raffleItems.forEach((item) => {
+    console.log(item.raffleItemPrizes);
   });
 
-  raffleItems.push({
-    ticketAddress: ticketAddress,
-    ticketId: "6",
-    raffleItemPrizes: prizeItems,
-  });
-
-  console.log("raffle items:", raffleItems[0].raffleItemPrizes);
+  //console.log("raffle items:", raffleItems);
 
   let tx;
 
@@ -87,9 +109,6 @@ async function main() {
 
   await prizeContract;
 
-  const balance = await prizeContract.balanceOf(itemManager, "0");
-  console.log("Balance:", balance.toString());
-
   tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
     gasPrice: gasPrice,
   });
@@ -103,9 +122,9 @@ async function main() {
   const openRaffles = await rafflesContract.getRaffles();
   console.log("open raffles:", openRaffles);
 
-  const raffleInfo = await rafflesContract.raffleInfo("4");
+  const raffleInfo = await rafflesContract.raffleInfo("5");
 
-  console.log("raffle info:", raffleInfo.raffleItems_);
+  console.log("raffle info:", raffleInfo);
 }
 
 exports.startRaffle = main;

@@ -4,14 +4,14 @@ const {
   LedgerSigner,
 } = require("../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
 
-const gasPrice = 50000000000;
+const gasPrice = 100000000000;
 
 async function transferOwner() {
   const accounts = await ethers.getSigners();
 
   //raffle matic
   const contractAddress = "0x6c723cac1E35FE29a175b287AE242d424c52c1CE";
-  let currentOwner = "0x585E06CA576D0565a035301819FD2cfD7104c1E8";
+  let currentOwner = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
   let signer;
 
   // deploy DiamondCutFacet
@@ -25,7 +25,7 @@ async function transferOwner() {
     });
     signer = await ethers.provider.getSigner(currentOwner);
   } else if (hre.network.name === "matic") {
-    signer = new LedgerSigner(ethers.provider);
+    signer = accounts[0]; //new LedgerSigner(ethers.provider);
   } else {
     throw Error("Incorrect network selected");
   }
@@ -42,9 +42,8 @@ async function transferOwner() {
   currentOwner = await transferContract.owner();
   console.log("old owner:", currentOwner);
 
-  return;
+  const newOwner = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
 
-  const newOwner = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
   const tx = await transferContract.transferOwnership(newOwner, {
     gasPrice: gasPrice,
   });

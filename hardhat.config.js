@@ -41,10 +41,10 @@ module.exports = {
     hardhat: {
       forking: {
         url: process.env.MATIC_URL,
-        timeout: 120000,
+        timeout: 8000000,
       },
       blockGasLimit: 20000000,
-      timeout: 120000,
+      timeout: 8000000,
       gas: "auto",
     },
 
