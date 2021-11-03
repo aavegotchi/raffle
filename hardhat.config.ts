@@ -10,6 +10,8 @@ import "@typechain/hardhat";
 import "@typechain/ethers-v5";
 
 require("./tasks/startDropRaffle");
+require("./tasks/deployRaffleVoucher");
+require("./tasks/deployVoucherConverter");
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:
@@ -60,7 +62,7 @@ module.exports = {
   },
   // This is a sample solc configuration that specifies which version of solc to use
   solidity: {
-    version: "0.7.4",
+    version: "0.8.0",
     settings: {
       optimizer: {
         enabled: true,

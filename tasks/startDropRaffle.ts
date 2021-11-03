@@ -7,12 +7,18 @@ import { Signer } from "@ethersproject/abstract-signer";
 import { VouchersContract } from "../typechain-types/VouchersContract";
 import { RafflesContract } from "../typechain-types/RafflesContract";
 
-import { gasPrice, maticRafflesAddress, maticTicketAddress } from "../helpers";
+import {
+  gasPrice,
+  getLedgerSigner,
+  maticRafflesAddress,
+  maticTicketAddress,
+} from "../helpers";
 
 export interface StartDropRaffleTaskArgs {
   prizeAddress: string;
   prizeAmount: string;
   duration: string;
+  deployer: string;
 }
 
 task(
@@ -25,6 +31,7 @@ task(
   )
   .addParam("prizeAmount")
   .addParam("duration", "Number of hours the raffle will last")
+  .addParam("deployer")
 
   .setAction(
     async (
@@ -33,23 +40,7 @@ task(
     ) => {
       const itemManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
       console.log(itemManager);
-      let signer: Signer;
-      const testing = ["hardhat", "localhost"].includes(hre.network.name);
-      if (testing) {
-        await hre.network.provider.request({
-          method: "hardhat_impersonateAccount",
-          params: [itemManager],
-        });
-        signer = await hre.ethers.provider.getSigner(itemManager);
-      } else if (hre.network.name === "matic") {
-        signer = new LedgerSigner(
-          hre.ethers.provider,
-          "hid",
-          "m/44'/60'/2'/0/0"
-        );
-      } else {
-        throw Error("Incorrect network selected");
-      }
+      let signer: Signer = await getLedgerSigner(hre, taskArgs.deployer);
 
       const rafflesContract = (await hre.ethers.getContractAt(
         "RafflesContract",
@@ -62,8 +53,6 @@ task(
         taskArgs.prizeAddress,
         signer
       )) as VouchersContract;
-
-      console.log("signer:", signer);
 
       let contractBal = await prizeContract.balanceOf(itemManager, "0");
 
@@ -78,7 +67,7 @@ task(
       const prizeItems = [];
 
       prizeItems.push({
-        prizeAddress: taskArgs.prizeAmount,
+        prizeAddress: taskArgs.prizeAddress,
         prizeId: "0",
         prizeQuantity: taskArgs.prizeAmount,
       });
