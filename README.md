@@ -8,16 +8,24 @@
 
 Tests are in the `test/test.js` file.
 
-The `getWins` Javascript function in the `test/test.js` file is used to process the return value of the `winners` function in the `RafflesContract.sol` contract.  The return value of `getWins` is fed into the `claimPrizes` function in the `RafflesContract.sol` contract. The `claimPrizes` function verifies the wins and then transfers the prizes to the winner.
+The `getWins` Javascript function in the `test/test.js` file is used to process the return value of the `winners` function in the `RafflesContract.sol` contract. The return value of `getWins` is fed into the `claimPrizes` function in the `RafflesContract.sol` contract. The `claimPrizes` function verifies the wins and then transfers the prizes to the winner.
 
-### Mainnet Addresses
+## Deployed Addresses
+
+### Mainnet
+
 - RaffleContract: 0x144d196Bf99a4EcA33aFE036Da577d7D66583DB6
 - VoucherContract: 0xe54891774EED9277236bac10d82788aee0Aed313
 - Second RaffleContract: 0xAFFF04FbFe54Cc985E25493A8F9D7114012D6d6F
 - Aave Prize/Voucher Contract: 0xa983b3d938eEDf79783CE88ed227A47b6861A3e9
 
+### Polygon
 
-Kovan addresses
+- Diamond: 0x6c723cac1E35FE29a175b287AE242d424c52c1CE
+- Owner: 0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119
+
+### Kovan addresses
+
 - WearableVouchersContract:0x9d038aed3BEDbb143B4F3414Af6119231b77ACFC
 - AavePrizesContract:0xe3b94c7E3950C4a47FC88c41EE3Ca1359806d646
 - RaffleContract:0xaAF48D4798e987DAE6f315C0d28bE88aBeF1e807

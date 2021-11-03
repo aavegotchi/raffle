@@ -1,4 +1,9 @@
 /* global ethers hre */
+// import { LedgerSigner } from "@ethersproject/hardware-wallets";
+
+const {
+  LedgerSigner,
+} = require("../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
 
 async function main() {
   const accounts = await ethers.getSigners();
@@ -74,11 +79,13 @@ async function main() {
         prizeQuantity: prizeQuantity,
       });
 
+      /*
       let balance = await prizeContract.balanceOf(itemManager, prizeId);
       console.log(`Item manager balance of ${prizeId}`, balance.toString());
 
       balance = await prizeContract.balanceOf(rafflesAddress, prizeId);
       console.log(`Raffle contract balance of ${prizeId}`, balance.toString());
+      */
     }
 
     raffleItems.push({
@@ -109,11 +116,13 @@ async function main() {
 
   await prizeContract;
 
+  console.log("Set Approval");
   tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
     gasPrice: gasPrice,
   });
   await tx.wait();
 
+  console.log("Deploy Raffle");
   tx = await rafflesContract.startRaffle(time, raffleItems, {
     gasPrice: gasPrice,
   });

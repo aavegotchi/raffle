@@ -1,21 +1,15 @@
 /* global task ethers */
-require("@nomiclabs/hardhat-waffle");
-require("@nomiclabs/hardhat-ethers");
+import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-etherscan";
 require("hardhat-gas-reporter");
 require("hardhat-contract-sizer");
-require("@nomiclabs/hardhat-etherscan");
 
 require("dotenv").config();
+import "@typechain/hardhat";
+import "@typechain/ethers-v5";
 
-// This is a sample Buidler task. To learn how to create your own go to
-// https://buidler.dev/guides/create-task.html
-task("accounts", "Prints the list of accounts", async () => {
-  const accounts = await ethers.getSigners();
-
-  for (const account of accounts) {
-    console.log(await account.getAddress());
-  }
-});
+require("./tasks/startDropRaffle");
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:
