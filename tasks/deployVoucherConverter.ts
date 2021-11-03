@@ -9,6 +9,7 @@ import { Signer } from "@ethersproject/abstract-signer";
 export interface DeployVoucherConverterTaskArgs {
   voucherAddress: string;
   erc721TokenAddress: string;
+  voucherId: string;
   deployer: string;
 }
 
@@ -21,6 +22,7 @@ task(
     "The address of the Voucher convertible for ERC721"
   )
   .addParam("erc721TokenAddress", "Contract address of the ERC721 convertible")
+  .addParam("voucherId", "ID of the ERC1155 voucher")
   .addParam("deployer")
   .setAction(
     async (
@@ -49,7 +51,7 @@ task(
           "TransferPortals",
           signer
         )) as TransferPortals__factory
-      ).deploy(taskArgs.voucherAddress, taskArgs.erc721TokenAddress, {
+      ).deploy(taskArgs.voucherAddress, taskArgs.erc721TokenAddress, "0", {
         gasPrice: gasPrice,
       });
       await TransferPortals.deployed();

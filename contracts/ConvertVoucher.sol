@@ -12,15 +12,20 @@ contract TransferPortals is Ownable, IERC721Receiver {
     // contract address for voucher erc1155
     address voucherContract;
     address erc721TokenAddress;
+    uint256 voucherId;
     bool isPaused = false;
-    uint256 voucherId = 0;
 
     event VoucherContractSet(address voucherContract);
     event TokenAddressSet(address tokenAddress);
 
-    constructor(address _voucherContract, address _tokenAddress) {
+    constructor(
+        address _voucherContract,
+        address _tokenAddress,
+        uint256 _voucherId
+    ) {
         voucherContract = _voucherContract;
         erc721TokenAddress = _tokenAddress;
+        voucherId = _voucherId;
     }
 
     function setVoucherContract(address _voucherContract) external onlyOwner {

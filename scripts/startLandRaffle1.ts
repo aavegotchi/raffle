@@ -10,6 +10,7 @@ export async function main() {
   const realmDiamond = "0x1D0360BaC7299C86Ec8E99d0c1C9A95FEfaF2a11";
   const prizeAmount = "4000";
   const raffleDuration = "72"; //in hours
+  const voucherId = "0";
 
   //First deploy the Voucher to be used as the Raffle Prize
   const deployVoucherTaskArgs: DeployRaffleVoucherArgs = {
@@ -26,6 +27,7 @@ export async function main() {
     voucherAddress: voucherAddress,
     erc721TokenAddress: realmDiamond,
     deployer: itemManager,
+    voucherId: voucherId,
   };
   await run("deployVoucherConverter", deployConverterTaskArgs);
 
@@ -35,6 +37,7 @@ export async function main() {
     prizeAmount: prizeAmount,
     duration: raffleDuration,
     deployer: itemManager,
+    voucherId: voucherId,
   };
 
   await run("startDropRaffle", startDropRaffleTaskArgs);

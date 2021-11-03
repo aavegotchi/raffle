@@ -4,7 +4,7 @@ const {
   LedgerSigner,
 } = require("../../aavegotchi-contracts/node_modules/@ethersproject/hardware-wallets");
 import { Signer } from "@ethersproject/abstract-signer";
-import { VouchersContract } from "../typechain-types/VouchersContract";
+import { ERC1155Voucher } from "../typechain-types/ERC1155Voucher";
 import { RafflesContract } from "../typechain-types/RafflesContract";
 
 import {
@@ -18,6 +18,7 @@ export interface StartDropRaffleTaskArgs {
   prizeAddress: string;
   prizeAmount: string;
   duration: string;
+  voucherId: string;
   deployer: string;
 }
 
@@ -31,6 +32,7 @@ task(
   )
   .addParam("prizeAmount")
   .addParam("duration", "Number of hours the raffle will last")
+  .addParam("voucherId")
   .addParam("deployer")
 
   .setAction(
@@ -49,17 +51,17 @@ task(
       )) as RafflesContract;
 
       const prizeContract = (await hre.ethers.getContractAt(
-        "VouchersContract",
+        "ERC1155Voucher",
         taskArgs.prizeAddress,
         signer
-      )) as VouchersContract;
+      )) as ERC1155Voucher;
 
       let contractBal = await prizeContract.balanceOf(itemManager, "0");
 
-      console.log("bal:", contractBal.toString());
+      console.log("Item manager balance:", contractBal.toString());
       contractBal = await prizeContract.balanceOf(maticRafflesAddress, "0");
 
-      console.log("bal:", contractBal.toString());
+      console.log("Raffle contract balance:", contractBal.toString());
 
       const time = 3600 * Number(taskArgs.duration); /* 72 hours */
 
@@ -87,9 +89,6 @@ task(
 
       console.log("Execute startRaffle function");
 
-      const balance = await prizeContract.balanceOf(itemManager, "0");
-      console.log("Balance:", balance.toString());
-
       tx = await prizeContract.setApprovalForAll(maticRafflesAddress, true, {
         gasPrice: gasPrice,
       });
@@ -100,13 +99,23 @@ task(
       });
       await tx.wait();
 
+      let balance = await prizeContract.balanceOf(itemManager, "0");
+      console.log("Item Manager Balance:", balance.toString());
+
+      balance = await prizeContract.balanceOf(maticRafflesAddress, "0");
+      console.log("Raffle contract Prize Balance:", balance.toString());
+
       const openRaffles = await rafflesContract.getRaffles();
-      console.log("open raffles:", openRaffles);
 
       const raffleInfo = await rafflesContract.raffleInfo(
         openRaffles.length - 1
       );
 
-      console.log("raffle info:", raffleInfo.raffleItems_);
+      console.log(
+        `Raffle ${
+          openRaffles.length - 1
+        } has been created with ticket type: ${raffleInfo.raffleItems_[0].ticketId.toString()}`,
+        raffleInfo.raffleItems_
+      );
     }
   );
