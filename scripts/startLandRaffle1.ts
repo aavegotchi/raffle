@@ -38,6 +38,8 @@ export async function main() {
   };
 
   await run("startDropRaffle", startDropRaffleTaskArgs);
+
+  console.log("REMEMBER TO TRANSFER THE PRIZES TO THE CONVERTER CONTRACT!!!");
 }
 
 if (require.main === module) {
