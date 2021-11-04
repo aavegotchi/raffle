@@ -40,7 +40,7 @@ export async function main() {
     voucherId: voucherId,
   };
 
-  await run("startDropRaffle", startDropRaffleTaskArgs);
+  // await run("startDropRaffle", startDropRaffleTaskArgs);
 
   console.log("REMEMBER TO TRANSFER THE PRIZES TO THE CONVERTER CONTRACT!!!");
 }

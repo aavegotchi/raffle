@@ -27,3 +27,18 @@ export async function getLedgerSigner(
     return new LedgerSigner(hre.ethers.provider, "hid", "m/44'/60'/2'/0/0");
   }
 }
+
+export async function impersonate(
+  address: string,
+  contract: any,
+  ethers: any,
+  network: any
+) {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [address],
+  });
+  let signer = await ethers.getSigner(address);
+  contract = contract.connect(signer);
+  return contract;
+}
