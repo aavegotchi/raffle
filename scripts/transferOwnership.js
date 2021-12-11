@@ -11,7 +11,7 @@ async function transferOwner() {
 
   //raffle matic
   const contractAddress = "0x6c723cac1E35FE29a175b287AE242d424c52c1CE";
-  let currentOwner = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
+  let currentOwner = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
   let signer;
 
   // deploy DiamondCutFacet
@@ -25,7 +25,7 @@ async function transferOwner() {
     });
     signer = await ethers.provider.getSigner(currentOwner);
   } else if (hre.network.name === "matic") {
-    signer = accounts[0]; //new LedgerSigner(ethers.provider);
+    signer = new LedgerSigner(ethers.provider, "hid", "m/44'/60'/2'/0/0"); //new LedgerSigner(ethers.provider);
   } else {
     throw Error("Incorrect network selected");
   }
@@ -42,7 +42,7 @@ async function transferOwner() {
   currentOwner = await transferContract.owner();
   console.log("old owner:", currentOwner);
 
-  const newOwner = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
+  const newOwner = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
 
   const tx = await transferContract.transferOwnership(newOwner, {
     gasPrice: gasPrice,

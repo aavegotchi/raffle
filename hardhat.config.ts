@@ -11,13 +11,18 @@ import "@typechain/ethers-v5";
 
 require("./tasks/startDropRaffle");
 require("./tasks/deployRaffleVoucher");
-require("./tasks/deployVoucherConverter");
+require("./tasks/deployPortalConverter");
+require("./tasks/deployRealmConverter");
+require("./tasks/startRealmRaffle");
 
 // You have to export an object to set up your config
 // This object can have the following optional entries:
 // defaultNetwork, networks, solc, and paths.
 // Go to https://buidler.dev/config/ to learn more
 module.exports = {
+  mocha: {
+    timeout: 80000000,
+  },
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
@@ -56,7 +61,7 @@ module.exports = {
     },
     matic: {
       url: process.env.MATIC_URL,
-      accounts: [process.env.SECRET],
+      accounts: [process.env.ITEM_MANAGER],
       gasPrice: 61000000000,
     },
   },

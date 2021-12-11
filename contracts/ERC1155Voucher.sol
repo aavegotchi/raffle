@@ -4,8 +4,12 @@ pragma solidity 0.8.0;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
 contract ERC1155Voucher is ERC1155 {
-    constructor(uint256 _tokenId, uint256 _mintNumber) ERC1155("https://aavegotchi.com/portalRaffle/") {
-        _mint(msg.sender, _tokenId, _mintNumber, "");
+    constructor(uint256[] memory _tokenIds, uint256[] memory _mintNumber) ERC1155("https://aavegotchi.com/portalRaffle/") {
+        require(_tokenIds.length == _mintNumber.length, "ERC1155Voucher: Incompatible lengths");
+
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            _mint(msg.sender, _tokenIds[i], _mintNumber[i], "");
+        }
     }
 
     function burn(

@@ -7,36 +7,33 @@ import { RafflesContract } from "../typechain-types/RafflesContract";
 
 import {
   gasPrice,
-  getLedgerSigner,
   getSigner,
   maticRafflesAddress,
   maticTicketAddress,
 } from "../helpers";
 
-export interface StartDropRaffleTaskArgs {
+export interface StartRealmRaffleTaskArgs {
   prizeAddress: string;
-  prizeAmount: string;
+  prizeAmounts: string;
   duration: string;
-  voucherId: string;
   deployer: string;
 }
 
 task(
-  "startDropRaffle",
+  "startRealmRaffle",
   "Starts a Drop raffle for Drop Tickets and ERC1155 vouchers, redeemable for ERC721 NFTs"
 )
   .addParam(
     "prizeAddress",
     "The contract address of the Voucher used to convert into the ERC721"
   )
-  .addParam("prizeAmount")
+  .addParam("prizeAmounts")
   .addParam("duration", "Number of hours the raffle will last")
-  .addParam("voucherId")
   .addParam("deployer")
 
   .setAction(
     async (
-      taskArgs: StartDropRaffleTaskArgs,
+      taskArgs: StartRealmRaffleTaskArgs,
       hre: HardhatRuntimeEnvironment
     ) => {
       // const itemManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
@@ -67,11 +64,13 @@ task(
       const raffleItems = [];
       const prizeItems = [];
 
-      prizeItems.push({
-        prizeAddress: taskArgs.prizeAddress,
-        prizeId: taskArgs.voucherId,
-        prizeQuantity: taskArgs.prizeAmount,
-      });
+      for (let i = 0; i < 4; i++) {
+        prizeItems.push({
+          prizeAddress: taskArgs.prizeAddress,
+          prizeId: i, //voucher ID, 0,1,2,3
+          prizeQuantity: taskArgs.prizeAmounts.split(",")[i],
+        });
+      }
 
       raffleItems.push({
         ticketAddress: maticTicketAddress,

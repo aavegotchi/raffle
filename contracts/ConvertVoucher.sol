@@ -6,13 +6,17 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {IAavegotchiFacet} from "./interfaces/IAavegotchiFacet.sol";
+import {IRealmFacet} from "./interfaces/IRealmFacet.sol";
+
+import "./libraries/LibSignature.sol";
+import "hardhat/console.sol";
 
 contract TransferPortals is Ownable, IERC721Receiver {
     // contract address for voucher erc1155
     address voucherContract;
     address erc721TokenAddress;
     uint256 voucherId;
+    bytes backendPubKey;
     bool isPaused = false;
 
     event VoucherContractSet(address voucherContract);
@@ -21,11 +25,13 @@ contract TransferPortals is Ownable, IERC721Receiver {
     constructor(
         address _voucherContract,
         address _tokenAddress,
-        uint256 _voucherId
+        uint256 _voucherId,
+        bytes memory _backendPubKey
     ) {
         voucherContract = _voucherContract;
         erc721TokenAddress = _tokenAddress;
         voucherId = _voucherId;
+        backendPubKey = _backendPubKey;
     }
 
     function setVoucherContract(address _voucherContract) external onlyOwner {
@@ -46,13 +52,21 @@ contract TransferPortals is Ownable, IERC721Receiver {
         return isPaused;
     }
 
-    function transferPortalsFromVoucher(uint256 _amount) external {
+    function transferERC721FromVoucher(uint256 _amount, bytes memory _signature) external {
+        address sender = msg.sender;
+        require(tx.origin == sender, "Not authorized, fren");
+
+        uint256 voucherBalance = IERC1155(voucherContract).balanceOf(sender, voucherId);
+
+        //check signature
+        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _amount, voucherBalance));
+
+        require(LibSignature.isValid(messageHash, _signature, backendPubKey), "Not authorized, fren");
+
         require(!isPaused, "Portal transfer is paused");
 
         require(_amount <= 20, "Can't mint more than 20 at once");
-        address sender = msg.sender; //LibMeta.msgSender();
 
-        uint256 voucherBalance = IERC1155(voucherContract).balanceOf(sender, voucherId);
         require(voucherBalance >= _amount, "Not enough ERC1155");
 
         uint256 balance = IERC721(erc721TokenAddress).balanceOf(address(this));
@@ -89,7 +103,7 @@ contract TransferPortals is Ownable, IERC721Receiver {
         uint256 j;
 
         //Get all the tokenIds of this contract (shouldn't revert)
-        uint32[] memory tokenIds = IAavegotchiFacet(erc721TokenAddress).tokenIdsOfOwner(address(this));
+        uint32[] memory tokenIds = IRealmFacet(erc721TokenAddress).tokenIdsOfOwner(address(this));
 
         //Loop through the tokenIds and transfer to sender
         do {
