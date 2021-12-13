@@ -47,18 +47,18 @@ task(
         `Deploying TransferPortals Contract with voucher address ${taskArgs.voucherAddress} for ERC721 token ${taskArgs.erc721TokenAddress}`
       );
 
-      const TransferPortals = await (
-        (await hre.ethers.getContractFactory(
-          "TransferPortals",
-          signer
-        )) as TransferPortals__factory
-      ).deploy(taskArgs.voucherAddress, taskArgs.erc721TokenAddress, {
-        gasPrice: gasPrice,
-      });
-      await TransferPortals.deployed();
+      // const TransferPortals = await (
+      //   (await hre.ethers.getContractFactory(
+      //     "TransferPortals",
+      //     signer
+      //   )) as TransferPortals__factory
+      // ).deploy(taskArgs.voucherAddress, taskArgs.erc721TokenAddress, "", ",", {
+      //   gasPrice: gasPrice,
+      // });
+      // await TransferPortals.deployed();
 
-      console.log("Convert contract deployed to:", TransferPortals.address);
+      // console.log("Convert contract deployed to:", TransferPortals.address);
 
-      return TransferPortals.address;
+      // return TransferPortals.address;
     }
   );

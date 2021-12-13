@@ -38,16 +38,16 @@ export async function main() {
     deployVoucherTaskArgs
   );
 
-  // const fakeerc721 = (await ethers.getContractFactory(
-  //   "TestERC721"
-  // )) as TestERC721__factory;
-  // const factory = await fakeerc721.deploy();
-  // const erc721 = (await factory.deployed()) as TestERC721;
+  const fakeerc721 = (await ethers.getContractFactory(
+    "TestERC721"
+  )) as TestERC721__factory;
+  const factory = await fakeerc721.deploy();
+  const erc721 = (await factory.deployed()) as TestERC721;
 
   //Then deploy the converter contract that is used to convert vouchers into ERC721
   const deployConverterTaskArgs: DeployRealmConverterTaskArgs = {
     voucherAddress: voucherAddress,
-    erc721TokenAddress: realmDiamond,
+    erc721TokenAddress: erc721.address,
     deployer: itemManager,
     voucherIds: voucherIds.join(","),
   };
@@ -167,7 +167,7 @@ export async function main() {
   );
 
   //mint prizes
-  // await erc721.mint(convertAddress, "200");
+  await erc721.mint(convertAddress, "200");
 
   console.log("claiming prizes");
   await raffle.claimPrize(
@@ -200,21 +200,21 @@ export async function main() {
   );
   await voucher.setApprovalForAll(convertAddress, true);
 
-  // const tx = await realmConverter.transferERC721FromVoucher(
-  //   "10",
-  //   "10",
-  //   "10",
-  //   "10"
-  // );
+  const tx = await realmConverter.transferERC721FromVoucher(
+    "10",
+    "10",
+    "10",
+    "10"
+  );
 
-  // const receipt = await tx.wait();
-  // console.log("receipt:", receipt.gasUsed.toString());
+  const receipt = await tx.wait();
+  console.log("receipt:", receipt.gasUsed.toString());
 
-  // const balance = await erc721.balanceOf(
-  //   "0x51208e5cC9215c6360210C48F81C8270637a5218"
-  // );
+  const balance = await erc721.balanceOf(
+    "0x51208e5cC9215c6360210C48F81C8270637a5218"
+  );
 
-  // console.log("final balance:", balance.toString());
+  console.log("final balance:", balance.toString());
 
   return {
     voucherAddress: voucherAddress,

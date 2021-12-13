@@ -105,7 +105,28 @@ task(
       console.log("Item Manager Balance:", balance.toString());
 
       balance = await prizeContract.balanceOf(maticRafflesAddress, "0");
-      console.log("Raffle contract Prize Balance:", balance.toString());
+      console.log(
+        "Raffle contract Humble Voucher Balance:",
+        balance.toString()
+      );
+
+      balance = await prizeContract.balanceOf(maticRafflesAddress, "1");
+      console.log(
+        "Raffle contract Reasonable Voucher Balance:",
+        balance.toString()
+      );
+
+      balance = await prizeContract.balanceOf(maticRafflesAddress, "2");
+      console.log(
+        "Raffle contract Spacious Horizontal Balance:",
+        balance.toString()
+      );
+
+      balance = await prizeContract.balanceOf(maticRafflesAddress, "3");
+      console.log(
+        "Raffle contract Spacious Vertical Balance:",
+        balance.toString()
+      );
 
       const openRaffles = await rafflesContract.getRaffles();
 

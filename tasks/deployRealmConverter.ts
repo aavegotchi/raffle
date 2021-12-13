@@ -1,7 +1,7 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { TransferPortals__factory } from "../typechain-types/factories/TransferPortals__factory";
+import { TransferRealm__factory } from "../typechain-types/factories/TransferRealm__factory";
 
 import { gasPrice, getLedgerSigner, getSigner } from "../helpers";
 import { Signer } from "@ethersproject/abstract-signer";
@@ -51,7 +51,7 @@ task(
         (await hre.ethers.getContractFactory(
           "TransferRealm",
           signer
-        )) as TransferPortals__factory
+        )) as TransferRealm__factory
       ).deploy(taskArgs.voucherAddress, taskArgs.erc721TokenAddress, {
         gasPrice: gasPrice,
       });

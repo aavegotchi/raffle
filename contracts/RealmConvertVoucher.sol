@@ -43,8 +43,9 @@ contract TransferRealm is Ownable, IERC721Receiver {
         return isPaused;
     }
 
-    function convertUint256Array(uint256[4] memory _inputs) internal pure returns (uint256[] memory output_) {
+    function convertUint256Array(uint256[4] memory _inputs) internal view returns (uint256[] memory output_) {
         for (uint256 i = 0; i < _inputs.length; i++) {
+            console.log("i", i);
             output_[i] = _inputs[i];
         }
         return output_;
@@ -57,11 +58,12 @@ contract TransferRealm is Ownable, IERC721Receiver {
         uint256 _spaciousVerAmount // bytes memory _signature
     ) external {
         address sender = msg.sender;
-        // require(tx.origin == sender, "Not authorized, fren");
+
+        require(tx.origin == msg.sender, "Not authorized, fren");
 
         require(!isPaused, "Portal transfer is paused");
 
-        require(_humbleAmount + _reasonableAmount + _spaciousHorAmount + _spaciousVerAmount <= 20, "Can't mint more than 20 at once");
+        require(_humbleAmount + _reasonableAmount + _spaciousHorAmount + _spaciousVerAmount <= 40, "Can't transfer more than 40 at once");
 
         require(IERC1155(voucherContract).balanceOf(sender, 0) >= _humbleAmount, "Not enough humble ERC1155");
         require(IERC1155(voucherContract).balanceOf(sender, 1) >= _reasonableAmount, "Not enough reasonable ERC1155");
@@ -69,15 +71,16 @@ contract TransferRealm is Ownable, IERC721Receiver {
         require(IERC1155(voucherContract).balanceOf(sender, 3) >= _spaciousVerAmount, "Not enough spacious ERC1155");
 
         uint256 balance = IERC721(erc721TokenAddress).balanceOf(address(this));
+
         require(balance >= _humbleAmount + _reasonableAmount + _spaciousHorAmount + _spaciousVerAmount, "Not enough Portals");
 
-        IERC1155(voucherContract).safeBatchTransferFrom(
-            sender,
-            address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF),
-            convertUint256Array([uint256(0), 1, 2, 3]),
-            convertUint256Array([_humbleAmount, _reasonableAmount, _spaciousHorAmount, _spaciousVerAmount]),
-            new bytes(0)
-        );
+        IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 0, _humbleAmount, new bytes(0));
+
+        IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 1, _reasonableAmount, new bytes(0));
+
+        IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 2, _spaciousHorAmount, new bytes(0));
+
+        IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 3, _spaciousVerAmount, new bytes(0));
 
         transferPortals(sender, 0, _humbleAmount);
         transferPortals(sender, 1, _reasonableAmount);
@@ -111,23 +114,22 @@ contract TransferRealm is Ownable, IERC721Receiver {
         uint256 _amount
     ) internal {
         uint256 transferredAmount;
-        uint256 j;
 
         //Get all the tokenIds of this contract (shouldn't revert)
-        uint32[] memory tokenIds = IRealmFacet(erc721TokenAddress).tokenIdsOfOwner(address(this));
+        uint256[] memory tokenIds = IRealmFacet(erc721TokenAddress).tokenIdsOfOwner(address(this));
 
-        //Loop through the tokenIds and transfer to sender if size equals voucher type
-        do {
-            uint256 tokenId = tokenIds[j];
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            if (transferredAmount < _amount) {
+                uint256 tokenId = tokenIds[i];
+                IRealmFacet.ParcelOutput memory parcel = IRealmFacet(erc721TokenAddress).getParcelInfo(tokenId);
 
-            IRealmFacet.ParcelOutput memory parcel = IRealmFacet(erc721TokenAddress).getParcelInfo(tokenId);
+                if (parcel.size == _voucherType) {
+                    IERC721(erc721TokenAddress).safeTransferFrom(address(this), _sender, tokenId);
+                    transferredAmount++;
+                }
+            } else break;
+        }
 
-            if (parcel.size == _voucherType) {
-                IERC721(erc721TokenAddress).safeTransferFrom(address(this), _sender, tokenId);
-                transferredAmount++;
-            }
-
-            j++;
-        } while (transferredAmount < _amount);
+        if (transferredAmount != _amount) revert("RealmConvert: Transfer unsuccessful");
     }
 }

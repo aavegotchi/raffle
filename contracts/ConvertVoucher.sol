@@ -103,7 +103,7 @@ contract TransferPortals is Ownable, IERC721Receiver {
         uint256 j;
 
         //Get all the tokenIds of this contract (shouldn't revert)
-        uint32[] memory tokenIds = IRealmFacet(erc721TokenAddress).tokenIdsOfOwner(address(this));
+        uint256[] memory tokenIds = IRealmFacet(erc721TokenAddress).tokenIdsOfOwner(address(this));
 
         //Loop through the tokenIds and transfer to sender
         do {

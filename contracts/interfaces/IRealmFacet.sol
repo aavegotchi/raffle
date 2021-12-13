@@ -4,7 +4,7 @@ pragma solidity 0.8.0;
 interface IRealmFacet {
     /// @param _owner The owner account of Aavegotchi
     /// @return tokenIds_ aavegotchi ids of the _owner
-    function tokenIdsOfOwner(address _owner) external view returns (uint32[] memory tokenIds_);
+    function tokenIdsOfOwner(address _owner) external view returns (uint256[] memory tokenIds_);
 
     struct ParcelOutput {
         string parcelId;
