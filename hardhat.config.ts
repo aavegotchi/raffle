@@ -54,11 +54,11 @@ module.exports = {
       accounts: [process.env.SECRET],
       gasPrice: 20000000000,
     },
-    mainnet: {
-      url: process.env.MAINNET_URL,
-      accounts: [process.env.SECRET],
-      gasPrice: 61000000000,
-    },
+    // mainnet: {
+    //   url: process.env.MAINNET_URL,
+    //   accounts: [process.env.SECRET],
+    //   gasPrice: 61000000000,
+    // },
     matic: {
       url: process.env.MATIC_URL,
       accounts: [process.env.ITEM_MANAGER],
