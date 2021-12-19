@@ -9,7 +9,6 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {IRealmFacet} from "./interfaces/IRealmFacet.sol";
 
 import "./libraries/LibSignature.sol";
-import "hardhat/console.sol";
 
 contract TransferRealm is Ownable, IERC721Receiver {
     // contract address for voucher erc1155
@@ -43,9 +42,8 @@ contract TransferRealm is Ownable, IERC721Receiver {
         return isPaused;
     }
 
-    function convertUint256Array(uint256[4] memory _inputs) internal view returns (uint256[] memory output_) {
+    function convertUint256Array(uint256[4] memory _inputs) internal pure returns (uint256[] memory output_) {
         for (uint256 i = 0; i < _inputs.length; i++) {
-            console.log("i", i);
             output_[i] = _inputs[i];
         }
         return output_;
@@ -54,8 +52,8 @@ contract TransferRealm is Ownable, IERC721Receiver {
     function transferERC721FromVoucher(
         uint256 _humbleAmount,
         uint256 _reasonableAmount,
-        uint256 _spaciousHorAmount,
-        uint256 _spaciousVerAmount // bytes memory _signature
+        uint256 _spaciousVerAmount,
+        uint256 _spaciousHorAmount // bytes memory _signature
     ) external {
         address sender = msg.sender;
 
@@ -67,8 +65,8 @@ contract TransferRealm is Ownable, IERC721Receiver {
 
         require(IERC1155(voucherContract).balanceOf(sender, 0) >= _humbleAmount, "Not enough humble ERC1155");
         require(IERC1155(voucherContract).balanceOf(sender, 1) >= _reasonableAmount, "Not enough reasonable ERC1155");
-        require(IERC1155(voucherContract).balanceOf(sender, 2) >= _spaciousHorAmount, "Not enough spacious ERC1155");
-        require(IERC1155(voucherContract).balanceOf(sender, 3) >= _spaciousVerAmount, "Not enough spacious ERC1155");
+        require(IERC1155(voucherContract).balanceOf(sender, 2) >= _spaciousVerAmount, "Not enough spacious ERC1155");
+        require(IERC1155(voucherContract).balanceOf(sender, 3) >= _spaciousHorAmount, "Not enough spacious ERC1155");
 
         uint256 balance = IERC721(erc721TokenAddress).balanceOf(address(this));
 
@@ -78,14 +76,14 @@ contract TransferRealm is Ownable, IERC721Receiver {
 
         IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 1, _reasonableAmount, new bytes(0));
 
-        IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 2, _spaciousHorAmount, new bytes(0));
+        IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 2, _spaciousVerAmount, new bytes(0));
 
-        IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 3, _spaciousVerAmount, new bytes(0));
+        IERC1155(voucherContract).safeTransferFrom(sender, address(0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF), 3, _spaciousHorAmount, new bytes(0));
 
         transferPortals(sender, 0, _humbleAmount);
         transferPortals(sender, 1, _reasonableAmount);
-        transferPortals(sender, 2, _spaciousHorAmount);
-        transferPortals(sender, 3, _spaciousVerAmount);
+        transferPortals(sender, 2, _spaciousVerAmount);
+        transferPortals(sender, 3, _spaciousHorAmount);
     }
 
     //If portals need to be withdrawn

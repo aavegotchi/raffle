@@ -23,10 +23,9 @@ module.exports = {
   mocha: {
     timeout: 80000000,
   },
+
   etherscan: {
-    // Your API key for Etherscan
-    // Obtain one at https://etherscan.io/
-    apiKey: process.env.ETHERSCAN_APIKEY,
+    apiKey: process.env.POLYGON_API_KEY,
   },
   contractSizer: {
     alphaSort: false,
@@ -39,10 +38,13 @@ module.exports = {
     gasPrice: 21,
   },
   networks: {
+    localhost: {
+      timeout: 200000000,
+    },
     hardhat: {
       forking: {
         url: process.env.MATIC_URL,
-        timeout: 8000000,
+        timeout: 20000000,
       },
       blockGasLimit: 20000000,
       timeout: 8000000,

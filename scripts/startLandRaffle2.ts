@@ -15,76 +15,84 @@ import { IERC20 } from "../typechain-types/IERC20";
 import { TransferRealm } from "../typechain-types/TransferRealm";
 import { ERC1155Voucher } from "../typechain-types/ERC1155Voucher";
 
-import { TestERC721__factory } from "../typechain-types/factories/TestERC721__factory";
-import { TestERC721 } from "../typechain-types/TestERC721";
-
 export async function main() {
   //Setup the variables
   const itemManager = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
   const realmDiamond = "0x1D0360BaC7299C86Ec8E99d0c1C9A95FEfaF2a11";
-  const raffleDuration = /*3600 * 72 +*/ (60 * 5).toString(); //"73"; //in hours
+  const raffleDuration = (3600 * 72 + 60 * 10).toString(); //ends in 72 hours and 10 mins
   const voucherIds = ["0", "1", "2", "3"];
+
+  //humble, reasonable, spacious-ver, spacious-hor
   const quantities = ["1217", "1217", "373", "193"];
 
-  // //First deploy the Voucher to be used as the Raffle Prize
-  const deployVoucherTaskArgs: DeployRaffleVoucherArgs = {
-    deployer: itemManager,
-    quantities: quantities.join(","),
-    voucherIds: voucherIds.join(","),
-  };
+  // // //First deploy the Voucher to be used as the Raffle Prize
+  // const deployVoucherTaskArgs: DeployRaffleVoucherArgs = {
+  //   deployer: itemManager,
+  //   quantities: quantities.join(","),
+  //   voucherIds: voucherIds.join(","),
+  // };
 
-  const voucherAddress = await run(
-    "deployRaffleVoucher",
-    deployVoucherTaskArgs
-  );
+  // const voucherAddress = await run(
+  //   "deployRaffleVoucher",
+  //   deployVoucherTaskArgs
+  // );
 
-  // const fakeerc721 = (await ethers.getContractFactory(
-  //   "TestERC721"
-  // )) as TestERC721__factory;
-  // const factory = await fakeerc721.deploy();
-  // const erc721 = (await factory.deployed()) as TestERC721;
+  // //Then deploy the converter contract that is used to convert vouchers into ERC721
+  // const deployConverterTaskArgs: DeployRealmConverterTaskArgs = {
+  //   voucherAddress: voucherAddress,
+  //   erc721TokenAddress: realmDiamond,
+  //   deployer: itemManager,
+  //   voucherIds: voucherIds.join(","),
+  // };
+  // const convertAddress = await run(
+  //   "deployRealmConverter",
+  //   deployConverterTaskArgs
+  // );
 
-  //Then deploy the converter contract that is used to convert vouchers into ERC721
-  const deployConverterTaskArgs: DeployRealmConverterTaskArgs = {
-    voucherAddress: voucherAddress,
-    erc721TokenAddress: realmDiamond,
-    deployer: itemManager,
-    voucherIds: voucherIds.join(","),
-  };
-  const convertAddress = await run(
-    "deployRealmConverter",
-    deployConverterTaskArgs
-  );
+  // let voucher = (await ethers.getContractAt(
+  //   "ERC1155Voucher",
+  //   voucherAddress
+  // )) as ERC1155Voucher;
+
+  // const balance = await voucher.balanceOfBatch(
+  //   [itemManager, itemManager, itemManager, itemManager],
+  //   ["0", "1", "2", "3"]
+  // );
+  // console.log("item manager baances:", balance.toString());
+
+  let voucherAddress = "0x96ac66A3BF1305e06c722e37f8a2706c4E38Bc77";
+  let convertAddress = "0xd5724BCA82423D5792C676cd453c1Bf66151dC04";
+  // let converrter
 
   //Then start the raffle, using the voucher address as the prize
-  const startRealmRaffleTaskArgs: StartRealmRaffleTaskArgs = {
-    prizeAddress: voucherAddress,
-    prizeAmounts: quantities.join(","),
-    duration: raffleDuration,
-    deployer: itemManager,
-  };
+  // const startRealmRaffleTaskArgs: StartRealmRaffleTaskArgs = {
+  //   prizeAddress: voucherAddress,
+  //   prizeAmounts: quantities.join(","),
+  //   duration: raffleDuration,
+  //   deployer: itemManager,
+  // };
 
-  await run("startRealmRaffle", startRealmRaffleTaskArgs);
+  // await run("startRealmRaffle", startRealmRaffleTaskArgs);
 
   // console.log("REMEMBER TO TRANSFER THE PRIZES TO THE CONVERTER CONTRACT!!!");
 
-  //Enter tickets
+  // Enter tickets
 
   let raffle = (await ethers.getContractAt(
     "RafflesContract",
     maticRafflesAddress
   )) as RafflesContract;
 
-  raffle = await impersonate(
-    "0x51208e5cC9215c6360210C48F81C8270637a5218",
-    raffle,
-    ethers,
-    network
-  );
+  // raffle = await impersonate(
+  //   "0x51208e5cC9215c6360210C48F81C8270637a5218",
+  //   raffle,
+  //   ethers,
+  //   network
+  // );
 
-  await raffle.enterTickets("7", [
-    { ticketAddress: maticTicketAddress, ticketId: "6", ticketQuantity: "10" },
-  ]);
+  // await raffle.enterTickets("7", [
+  //   { ticketAddress: maticTicketAddress, ticketId: "6", ticketQuantity: "10" },
+  // ]);
 
   //Raffle ends
   ethers.provider.send("evm_increaseTime", [86401]);
@@ -146,75 +154,55 @@ export async function main() {
 
   await raffle?.rawFulfillRandomness(requestId, "10000");
 
-  //claim tickets
-  const winsInfo = await getWinsInfo(
-    raffle,
-    "7",
-    "0x51208e5cC9215c6360210C48F81C8270637a5218"
-  );
-
-  console.log("wins info:", winsInfo);
-
-  const wins = await getWins(winsInfo);
-
-  console.log("wins:", wins);
-
-  raffle = await impersonate(
-    "0x51208e5cC9215c6360210C48F81C8270637a5218",
-    raffle,
-    ethers,
-    network
-  );
-
-  //mint prizes
-  // await erc721.mint(convertAddress, "200");
-
-  console.log("claiming prizes");
-  await raffle.claimPrize(
-    "7",
-    "0x51208e5cC9215c6360210C48F81C8270637a5218",
-    wins
-  );
-
-  //convert
-  let realmConverter = (await ethers.getContractAt(
-    "TransferRealm",
-    convertAddress
-  )) as TransferRealm;
-  realmConverter = await impersonate(
-    "0x51208e5cC9215c6360210C48F81C8270637a5218",
-    realmConverter,
-    ethers,
-    network
-  );
-
-  let voucher = (await ethers.getContractAt(
-    "ERC1155Voucher",
-    voucherAddress
-  )) as ERC1155Voucher;
-  voucher = await impersonate(
-    "0x51208e5cC9215c6360210C48F81C8270637a5218",
-    voucher,
-    ethers,
-    network
-  );
-  await voucher.setApprovalForAll(convertAddress, true);
-
-  // const tx = await realmConverter.transferERC721FromVoucher(
-  //   "10",
-  //   "10",
-  //   "10",
-  //   "10"
-  // );
-
-  // const receipt = await tx.wait();
-  // console.log("receipt:", receipt.gasUsed.toString());
-
-  // const balance = await erc721.balanceOf(
+  // //claim tickets
+  // const winsInfo = await getWinsInfo(
+  //   raffle,
+  //   "7",
   //   "0x51208e5cC9215c6360210C48F81C8270637a5218"
   // );
 
-  // console.log("final balance:", balance.toString());
+  // console.log("wins info:", winsInfo);
+
+  // const wins = await getWins(winsInfo);
+
+  // console.log("wins:", wins);
+
+  // raffle = await impersonate(
+  //   "0x51208e5cC9215c6360210C48F81C8270637a5218",
+  //   raffle,
+  //   ethers,
+  //   network
+  // );
+
+  // //mint prizes
+  // // await erc721.mint(convertAddress, "200");
+
+  // console.log("claiming prizes");
+  // await raffle.claimPrize(
+  //   "7",
+  //   "0x51208e5cC9215c6360210C48F81C8270637a5218",
+  //   wins
+  // );
+
+  // //convert
+  // let realmConverter = (await ethers.getContractAt(
+  //   "TransferRealm",
+  //   convertAddress
+  // )) as TransferRealm;
+  // realmConverter = await impersonate(
+  //   "0x51208e5cC9215c6360210C48F81C8270637a5218",
+  //   realmConverter,
+  //   ethers,
+  //   network
+  // );
+
+  // voucher = await impersonate(
+  //   "0x51208e5cC9215c6360210C48F81C8270637a5218",
+  //   voucher,
+  //   ethers,
+  //   network
+  // );
+  // await voucher.setApprovalForAll(convertAddress, true);
 
   return {
     voucherAddress: voucherAddress,
