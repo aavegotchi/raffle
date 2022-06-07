@@ -1,6 +1,7 @@
 /* global ethers */
 // import { LedgerSigner } from "@ethersproject/hardware-wallets";
 import { ethers, network } from "hardhat";
+import { gasPrice, impersonate } from "../helpers";
 
 const {
   LedgerSigner,
@@ -14,10 +15,9 @@ async function main() {
   let prizeAddress;
   let rafflesAddress;
   let rafflesContract;
-  let time;
   let signer;
 
-  const itemManager = "0xa370f2ADd2A9Fba8759147995d6A0641F8d7C119";
+  const itemManager = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
   //Voucher Address
   prizeAddress = "0x86935F11C86623deC8a25696E1C19a8659CbF95d";
 
@@ -26,7 +26,6 @@ async function main() {
 
   //Raffle tickets
   ticketAddress = "0xA02d547512Bb90002807499F05495Fe9C4C3943f";
-  const gasPrice = 100000000000;
 
   const testing = ["hardhat", "localhost"].includes(network.name);
 
@@ -36,7 +35,15 @@ async function main() {
       params: [itemManager],
     });
     signer = await ethers.provider.getSigner(itemManager);
-  } else signer = new LedgerSigner(ethers.provider, "hid", "m/44'/60'/2'/0/0");
+
+    await network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [itemManager],
+    });
+    signer = await ethers.provider.getSigner(itemManager);
+  } else signer = await (await ethers.getSigners())[0];
+
+  console.log("signer:", signer);
 
   rafflesContract = await ethers.getContractAt(
     "RafflesContract",
@@ -45,12 +52,13 @@ async function main() {
   );
 
   let prizeContract = await ethers.getContractAt(
-    "VouchersContract",
+    "ERC1155Voucher",
     prizeAddress,
     signer
   );
 
-  time = 3600 * 74 /* 72 hours */;
+  const thirtyMinutes = 25 * 60;
+  const time = 3600 * 72 + thirtyMinutes; /* 72 hours */
 
   const common = [292, 293, 294, 295, 298]; //brunette ponytail, leather tunic, bow and arrow, forked beard, horned helmet
   const uncommon = [296, 297, 299, 300]; //double-sided axe, animal skins, longbow, feathered cap
@@ -79,13 +87,11 @@ async function main() {
         prizeQuantity: prizeQuantity,
       });
 
-      /*
-      let balance = await prizeContract.balanceOf(itemManager, prizeId);
-      console.log(`Item manager balance of ${prizeId}`, balance.toString());
+      // let balance = await prizeContract.balanceOf(itemManager, prizeId);
+      // console.log(`Item manager balance of ${prizeId}`, balance.toString());
 
-      balance = await prizeContract.balanceOf(rafflesAddress, prizeId);
-      console.log(`Raffle contract balance of ${prizeId}`, balance.toString());
-      */
+      // balance = await prizeContract.balanceOf(rafflesAddress, prizeId);
+      // console.log(`Raffle contract balance of ${prizeId}`, balance.toString());
     }
 
     raffleItems.push({
@@ -99,41 +105,32 @@ async function main() {
     console.log(item.raffleItemPrizes);
   });
 
-  //console.log("raffle items:", raffleItems);
-
-  let tx;
-
   const owner = await rafflesContract.owner();
   console.log("owner:", owner);
 
   console.log("Execute startRaffle function");
 
   prizeContract = await ethers.getContractAt(
-    "VouchersContract",
+    "ERC1155Voucher",
     prizeAddress,
     signer
   );
 
   await prizeContract;
 
-  console.log("Set Approval");
-  tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
+  // console.log("Set Approval");
+  // const tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
+  //   gasPrice: gasPrice,
+  // });
+  // await tx.wait();
+
+  console.log("Deploy Raffle");
+  const tx = await rafflesContract.startRaffle(time, raffleItems, {
     gasPrice: gasPrice,
   });
   await tx.wait();
 
-  console.log("Deploy Raffle");
-  tx = await rafflesContract.startRaffle(time, raffleItems, {
-    gasPrice: gasPrice,
-  });
-  receipt = await tx.wait();
-
-  const openRaffles = await rafflesContract.getRaffles();
-  console.log("open raffles:", openRaffles);
-
-  const raffleInfo = await rafflesContract.raffleInfo("5");
-
-  console.log("raffle info:", raffleInfo);
+  console.log("Raffle started");
 }
 
 exports.startRaffle = main;
