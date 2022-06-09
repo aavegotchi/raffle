@@ -37,7 +37,7 @@ export async function main() {
   ethers.provider.send("evm_increaseTime", [86401 * 3]);
 
   //draw number
-  await raffle.drawRandomNumber("8");
+  await raffle.drawRandomNumber("9");
 
   //fulfill randomness
   const vrfCoordinator = "0x3d2341ADb2D31f1c5530cDC622016af293177AE0";
@@ -49,7 +49,7 @@ export async function main() {
 
   const encodedVrfSeed = ethers.utils.defaultAbiCoder.encode(
     ["bytes32", "uint256", "address", "uint256"],
-    [keyhash, "0", "0x6c723cac1E35FE29a175b287AE242d424c52c1CE", "6"]
+    [keyhash, "0", "0x6c723cac1E35FE29a175b287AE242d424c52c1CE", "7"]
   );
 
   const vrfSeed = ethers.utils.keccak256(encodedVrfSeed);
@@ -96,7 +96,7 @@ export async function main() {
   //claim tickets
   const winsInfo = await getWinsInfo(
     raffle,
-    "8",
+    "9",
     "0x51208e5cC9215c6360210C48F81C8270637a5218"
   );
 
