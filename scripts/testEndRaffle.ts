@@ -37,7 +37,7 @@ export async function main() {
   ethers.provider.send("evm_increaseTime", [86401 * 3]);
 
   //draw number
-  await raffle.drawRandomNumber("9");
+  await raffle.drawRandomNumber("10");
 
   //fulfill randomness
   const vrfCoordinator = "0x3d2341ADb2D31f1c5530cDC622016af293177AE0";
