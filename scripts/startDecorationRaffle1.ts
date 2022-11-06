@@ -38,7 +38,10 @@ async function main() {
     signer
   );
 
-  await erc1155.setApprovalForAll(rafflesAddress, true);
+  let tx = await erc1155.setApprovalForAll(rafflesAddress, true, {
+    gasPrice: gasPrice,
+  });
+  await tx.wait();
 
   rafflesContract = await ethers.getContractAt(
     "RafflesContract",
@@ -52,8 +55,8 @@ async function main() {
     signer
   );
 
-  // const thirtyMinutes = 25 * 60;
-  const time = 3600 * 72; //+ thirtyMinutes; /* 72 hours */
+  const thirtyMinutes = 30 * 60;
+  const time = 3600 * 72 + thirtyMinutes;
 
   const common = [19, 25, 31, 37, 43, 49];
   const uncommon = [20, 26, 32, 38, 44, 50];
@@ -114,7 +117,7 @@ async function main() {
   // await tx.wait();
 
   console.log("Deploy Raffle");
-  const tx = await rafflesContract.startRaffle(time, raffleItems, {
+  tx = await rafflesContract.startRaffle(time, raffleItems, {
     gasPrice: gasPrice,
   });
   await tx.wait();
