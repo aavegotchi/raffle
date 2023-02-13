@@ -9,7 +9,7 @@ import {
 } from "../helpers";
 import { Signer } from "@ethersproject/abstract-signer";
 
-const prizeAddress = "0x86935F11C86623deC8a25696E1C19a8659CbF95d";
+const prizeAddress = "0x58de9AaBCaeEC0f69883C94318810ad79Cc6a44f";
 const itemManager = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
 
 async function main() {
@@ -39,7 +39,7 @@ async function main() {
   const quantities = [1000, 500, 250, 100, 50, 5];
   const prizes = [common, uncommon, rare, legendary, mythical, godlike];
 
-  const prizeQuantitys = [];
+  const prizeQuantities = [];
   const raffleItems = [];
 
   for (let ticketId = 0; ticketId < 6; ticketId++) {
@@ -49,7 +49,7 @@ async function main() {
     const prizeItems = [];
     for (let j = 0; j < itemIds.length; j++) {
       const prizeId = itemIds[j];
-      prizeQuantitys.push(prizeQuantity);
+      prizeQuantities.push(prizeQuantity);
       prizeItems.push({
         prizeAddress: prizeAddress,
         prizeId: prizeId,
