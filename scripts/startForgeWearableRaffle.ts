@@ -9,11 +9,11 @@ import {
 } from "../helpers";
 import { Signer } from "@ethersproject/abstract-signer";
 
-const prizeAddress = "0x58de9AaBCaeEC0f69883C94318810ad79Cc6a44f";
+const prizeAddress = "0x4fDfc1B53Fd1D80d969C984ba7a8CE4c7bAaD442"; // forge diamond
 const itemManager = "0x8D46fd7160940d89dA026D59B2e819208E714E82";
 
 async function main() {
-  let signer: Signer = await getSigner(hre, itemManager);
+  let signer: Signer = await getSigner(hre, itemManager); // should be forge schematic owner
   // console.log("signer:", signer);
 
   const rafflesContract = await ethers.getContractAt(
@@ -36,16 +36,18 @@ async function main() {
   const legendary = [358, 359, 360, 361]; //
   const mythical = [362, 363, 364, 365]; //
   const godlike = [366, 367, 368, 369]; //
-  const quantities = [1000, 500, 250, 100, 50, 5];
+  const quantities = [400, 200, 100, 0, 20, 2];
   const prizes = [common, uncommon, rare, legendary, mythical, godlike];
 
   const prizeQuantities = [];
   const raffleItems = [];
 
-  for (let ticketId = 0; ticketId < 6; ticketId++) {
+  for (let ticketId = 0; ticketId < prizes.length; ticketId++) {
     const itemIds = prizes[ticketId];
     const prizeQuantity = quantities[ticketId];
-
+    if(prizeQuantity === 0) {
+      continue;
+    }
     const prizeItems = [];
     for (let j = 0; j < itemIds.length; j++) {
       const prizeId = itemIds[j];
@@ -78,14 +80,6 @@ async function main() {
   console.log("owner:", owner);
 
   console.log("Execute startRaffle function");
-
-  prizeContract = await ethers.getContractAt(
-    "ERC1155Voucher",
-    prizeAddress,
-    signer
-  );
-
-  await prizeContract;
 
   // console.log("Set Approval");
   // const tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
