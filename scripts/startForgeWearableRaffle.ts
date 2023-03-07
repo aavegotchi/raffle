@@ -1,6 +1,6 @@
 /* global ethers */
 // import { LedgerSigner } from "@ethersproject/hardware-wallets";
-import { ethers, network } from "hardhat";
+import * as hre from "hardhat";
 import {
   gasPrice,
   getSigner,
@@ -16,13 +16,13 @@ async function main() {
   let signer: Signer = await getSigner(hre, itemManager); // should be forge schematic owner
   // console.log("signer:", signer);
 
-  const rafflesContract = await ethers.getContractAt(
+  const rafflesContract = await hre.ethers.getContractAt(
     "RafflesContract",
     rafflesAddress,
     signer
   );
 
-  let prizeContract = await ethers.getContractAt(
+  let prizeContract = await hre.ethers.getContractAt(
     "ERC1155Voucher",
     prizeAddress,
     signer
@@ -33,24 +33,34 @@ async function main() {
   const common = [350, 351, 352, 353]; //
   const uncommon = [354, 356]; //
   const rare = [355, 357]; //
-  const legendary = [358, 359, 360, 361]; //
+  const legendary: number[] = []; //
   const mythical = [362, 363, 364, 365]; //
   const godlike = [366, 367, 368, 369]; //
   const quantities = [400, 200, 100, 0, 20, 2];
   const prizes = [common, uncommon, rare, legendary, mythical, godlike];
 
-  const prizeQuantities = [];
-  const raffleItems = [];
+  const prizeQuantities: number[] = [];
+  const raffleItems: any[] = [];
 
   for (let ticketId = 0; ticketId < prizes.length; ticketId++) {
     const itemIds = prizes[ticketId];
-    const prizeQuantity = quantities[ticketId];
-    if(prizeQuantity === 0) {
+    let prizeQuantity = quantities[ticketId];
+    if (prizeQuantity === 0) {
       continue;
     }
-    const prizeItems = [];
+    const prizeItems: any[] = [];
     for (let j = 0; j < itemIds.length; j++) {
       const prizeId = itemIds[j];
+
+      console.log("prize id:", prizeId);
+
+      if (prizeId === 352) prizeQuantity = 399;
+      else if (prizeId === 353) prizeQuantity = 399;
+      else if (prizeId === 365) prizeQuantity = 19;
+      else prizeQuantity = quantities[ticketId];
+
+      console.log("ticket id:", ticketId);
+
       prizeQuantities.push(prizeQuantity);
       prizeItems.push({
         prizeAddress: prizeAddress,
@@ -81,14 +91,14 @@ async function main() {
 
   console.log("Execute startRaffle function");
 
-  // console.log("Set Approval");
-  // const tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
-  //   gasPrice: gasPrice,
-  // });
-  // await tx.wait();
+  console.log("Set Approval");
+  let tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
+    gasPrice: gasPrice,
+  });
+  await tx.wait();
 
   console.log("Deploy Raffle");
-  const tx = await rafflesContract.startRaffle(time, raffleItems, {
+  tx = await rafflesContract.startRaffle(time, raffleItems, {
     gasPrice: gasPrice,
   });
   await tx.wait();
