@@ -28,7 +28,12 @@ async function main() {
     signer
   );
 
-  const time = 3600 * 72; /* 72 hours */
+  const beginTime = 1678456800; //2pm UTC
+  const difNow = Math.ceil(beginTime - Date.now() / 1000);
+
+  console.log("dif now:", difNow);
+
+  const duration = 3600 * 72 + difNow + 60; /* 72 hours */
 
   const common = [350, 351, 352, 353]; //
   const uncommon = [354, 356]; //
@@ -91,14 +96,16 @@ async function main() {
 
   console.log("Execute startRaffle function");
 
-  console.log("Set Approval");
-  let tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
-    gasPrice: gasPrice,
-  });
-  await tx.wait();
+  // console.log("Set Approval");
+  // let tx = await prizeContract.setApprovalForAll(rafflesAddress, true, {
+  //   gasPrice: gasPrice,
+  // });
+  // await tx.wait();
+
+  // console.log("Approval set!");
 
   console.log("Deploy Raffle");
-  tx = await rafflesContract.startRaffle(time, raffleItems, {
+  const tx = await rafflesContract.startRaffle(duration, raffleItems, {
     gasPrice: gasPrice,
   });
   await tx.wait();
