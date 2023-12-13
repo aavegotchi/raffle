@@ -37,7 +37,7 @@ export async function main() {
 
   const encodedVrfSeed = ethers.utils.defaultAbiCoder.encode(
     ["bytes32", "uint256", "address", "uint256"],
-    [keyhash, "0", "0x6c723cac1E35FE29a175b287AE242d424c52c1CE", "12"]
+    [keyhash, "0", "0x6c723cac1E35FE29a175b287AE242d424c52c1CE", "10"]
   );
 
   const vrfSeed = ethers.utils.keccak256(encodedVrfSeed);
